@@ -58,12 +58,7 @@ onMounted( async () => {
     world.value.camera.updateProjectionMatrix();
   }
 
-  let _sp = Wire.Sphere( 100, 32, 0xFFFFFF );
-  world.value.scene.add(_sp);
-
   const animate = ()=>{
-    _sp.rotation.x -= 0.01;
-    _sp.rotation.y -= 0.011;
   }
 
   world.value.renderer.setAnimationLoop( animate );

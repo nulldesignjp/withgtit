@@ -7,6 +7,7 @@ export default class TheWorld {
         const defaults = {
             backgroundColor: 0x181818,
             isOrthographic: false,
+            isOrbitControls: false
         }
         this.props = { ...defaults, ...props };
 
@@ -74,16 +75,17 @@ export default class TheWorld {
      * 初期生成。コントロールやカメラの位置などを設定。特に不要であれば削除
      */
     generate() {
-        // {
-        //     this.controls = new OrbitControls( this.camera, this.renderer.domElement);
-        //     this.controls.autoRotate = true;
-        //     this.controls.autoRotateSpeed = 0.1;
-        //     this.controls.enableDamping = true;
-        //     this.controls.dampingFactor = 0.05;
-        //     this.controls.enableZoom = true;
-        //     this.controls.enabled = true;
-        //     this.controls.target = this.focus;
-        // }
+
+        if (this.props.isOrbitControls) {
+            this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+            this.controls.autoRotate = true;
+            this.controls.autoRotateSpeed = 0.2;
+            this.controls.enableDamping = true;
+            this.controls.dampingFactor = 0.05;
+            this.controls.enableZoom = true;
+            this.controls.enabled = true;
+            this.controls.target = this.focus;
+        }
 
 
         this.focalLengthToFOV(35);
@@ -102,7 +104,7 @@ export default class TheWorld {
         this.deltaTime = this.clock.getDelta() * this.timeScale;
         this.time += this.deltaTime;
 
-        // this.controls.update();
+        this.controls?.update();
         this.render();
     }
 
