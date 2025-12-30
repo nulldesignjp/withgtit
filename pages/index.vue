@@ -63,7 +63,7 @@ onMounted( async () => {
 
   const animate = ()=>{
     _sp.rotation.x -= 0.01;
-    _sp.rotation.y -= 0.01;
+    _sp.rotation.y -= 0.011;
   }
 
   world.value.renderer.setAnimationLoop( animate );
@@ -92,19 +92,23 @@ header
   h1
     margin 0
     line-height 1
-    font-size 1rem
+    font-size 1em
 
   p
-    margin 1em 0 0 0
-    font-size: 1em
+    margin 0
+    line-height 1
+    font-size 1em
 
 footer
 
   .copyright
+    position fixed
+    left 16px
+    bottom 16px
     margin 0
     line-height 1
-    font-size small
-    opacity: 0.5
+    font-size xx-small
+    opacity: 0.25
 
 .webglview
   width 100vw

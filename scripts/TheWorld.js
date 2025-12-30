@@ -4,11 +4,11 @@ import { OrbitControls } from "/node_modules/three/examples/jsm/controls/OrbitCo
 export default class TheWorld {
 
     constructor(props) {
-        const defalut = {
+        const defaults = {
             backgroundColor: 0x181818,
             isOrthographic: false,
         }
-        this.props = { ...defalut, ...props };
+        this.props = { ...defaults, ...props };
 
         this.updateKey = undefined;
         this.resizeKey = undefined;
@@ -257,9 +257,17 @@ export default class TheWorld {
         this.removeEvents();
         this.eventList = null;
 
-        this.scene.children.forEach(_mesh => {
-            this.scene.remove(_mesh)
-        })
+        this.scene.traverse((obj) => {
+            if (obj.geometry) obj.geometry.dispose();
+            if (obj.material) {
+                if (Array.isArray(obj.material)) {
+                    obj.material.forEach(m => m.dispose());
+                } else {
+                    obj.material.dispose();
+                }
+            }
+        });
+        this.scene.clear();
 
         this.renderer.dispose()
 
