@@ -36,33 +36,27 @@ useHead(() => ({
 } ));
 
 onMounted( async () => {
-  const canvas = webglview.value
+ 
   world.value = new TheWorld({
-    canvas: canvas,
+    canvas: webglview.value,
     backgroundColor: 0x181818,
-    isOrthographic: true,
+    isOrthographic: false, 
     isOrbitControls: true,
   });
 
 
-  world.value.camera.position.set( 0, 0, 100 );
-  world.value.camera.far = 200;
+  world.value.camera.position.set( 0, 0, 50 );
+  world.value.camera.far = 1000;
+  world.value.camera.lookAt(0,0,0);
 
   //  camera settting
   if( !world.value.props.isOrthographic )
   {
-    world.value.focalLengthToFOV(35);
-    let dist = world.value.pixelEqualMagnification();
-    world.value.camera.far = dist + 1000;
-    world.value.camera.position.set( 0, 0, dist );
-    world.value.camera.updateProjectionMatrix();
+     // Adjust if needed, or leave defaults
   }
 
-  const animate = ()=>{
-  }
 
-  world.value.renderer.setAnimationLoop( animate );
-
+  
 });
 
 onUnmounted(() => {
