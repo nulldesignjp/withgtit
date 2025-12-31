@@ -25,7 +25,7 @@ import { texture } from 'three/tsl';
 
 
 
-import { color, uv, vec4 } from 'three/tsl';
+import { color, uv, vec4, float, uniform, Fn } from 'three/tsl';
 import { MeshStandardNodeMaterial } from 'three/webgpu';
 import { MeshBasicNodeMaterial } from 'three/webgpu'; 
 
@@ -74,7 +74,14 @@ onMounted( async () => {
   const material = new MeshStandardNodeMaterial();
 
   // UVのX値を赤、Y値を緑にするシンプルな色定義
-  const myColorNode = vec4( uv().x, uv().y, 0.5, 1.0 );
+
+  const _float = uniform(1.0);
+
+  // const myColorNode = vec4( uv().x, uv().y, _float, 1.0 );
+
+  const myColorNode = Fn(()=>{
+    return vec4( uv().x, uv().y, _float, 1.0 );
+  })()
 
   // マテリアルの色として設定
   material.colorNode = myColorNode;
@@ -99,7 +106,6 @@ onMounted( async () => {
     // _mesh.position.z = -10;
     // scene.add( _mesh ); 
 
-    
     const texNode = texture(_texture);
     const material = new MeshStandardNodeMaterial();
     material.colorNode = texNode.mul(color(0xffffff));
@@ -110,7 +116,8 @@ onMounted( async () => {
 
   const _geometry = new THREE.PlaneGeometry( 2, 2 );
   const _bm = new MeshBasicNodeMaterial();
-  _bm.colorNode = color(0xFF00FF);  
+  const myFloat = uniform( 1.0 );
+  _bm.colorNode = color( 0xFF00FF ).mul( myFloat );
   const _mesh = new THREE.Mesh( _geometry, _bm );
   _mesh.position.z = -5;
   scene.add( _mesh ); 
@@ -118,6 +125,11 @@ onMounted( async () => {
 
 
   renderer.setAnimationLoop(() => {
+
+    _float.value = Math.sin( Date.now() / 1000 ) * 0.5 + 0.5;
+
+    myFloat.value = Math.sin( Date.now() / 1000 ) * 0.5 + 0.5;
+
     mesh.rotation.x -= 0.01;
     mesh.rotation.y -= 0.01;
     renderer.render( scene, camera );

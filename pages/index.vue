@@ -7,6 +7,8 @@
   article
 
     p content
+    p
+      a(href="https://nft.refikanadol.com/" target="_blank") https://nft.refikanadol.com/
 
   footer
     p.copyright © 2025 hrsk.
