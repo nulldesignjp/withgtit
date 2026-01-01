@@ -4,9 +4,7 @@
     h1 git training with Antigravity.
     p 2025年年納
 
-    ul
-      li
-        nuxt-link(to="/251231") 20251231 
+    navigation
 
   article
 

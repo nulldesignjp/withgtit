@@ -4,9 +4,7 @@
     h1 git training with Antigravity.
     p 20251231 with webGPU
 
-    ul
-      li
-        nuxt-link(to="/") HOME 
+    navigation
 
   article
     p WebGPUのお作法学習
