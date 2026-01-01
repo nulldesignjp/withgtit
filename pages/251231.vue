@@ -8,6 +8,13 @@
 
   article
     p WebGPUのお作法学習
+    p コツさえ掴めば大体の学習要綱が立てたられる。
+      br
+      |  ただしWebGPUがiOS26以降での対応なので現場投入は早くて2026年後半から2027年くらいだと思われる。
+
+    p 先が長い話。
+    p 2026年はAI + WebGLで推していくが、会社の進めるAIには関わらない方向で。
+
 
   footer
     p.copyright © 2025 hrsk.
@@ -306,7 +313,7 @@ onMounted( async () => {
 });
 
 onUnmounted(() => {
-  window.removeEventListener('resize', resize);
+  // window.removeEventListener('resize', resize);
 });
 
 </script>

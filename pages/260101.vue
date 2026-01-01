@@ -1,19 +1,17 @@
 <template lang="pug">
 .page
   header
-    h1 git training with Antigravity.
-    p 20260101
+    h1 nulldesign.jp.
+    p Learning Records and Prototype Archives
+
 
     navigation
 
-  //- article
-  //-   p WebGPUのお作法学習を捨てた
-
   footer
-    p.copyright © 2025 hrsk.
+    p.copyright © 2025 nulldesign.
     p.sns
-      a(href="https://x.com/hrsk")
-        span Twitter
+      a(href="https://twitter.com/intent/tweet?url=https%3A%2F%2Fhrsk.dev%2F&text=portfolip%20and%20archives.%0D%0A" target="_blank")
+        img(src="/assets/img/icon_x.jpg" alt="x.com")
       
   canvas(ref="webglview").webglview
 
@@ -26,9 +24,11 @@
 import * as THREE from 'three';
 import TheWorld from '~/scripts/TheWorld';
 
-
 const world = ref(null)
 const webglview = ref(null)
+
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
 
 useHead(() => ({
   title: 'untitled',
@@ -46,7 +46,6 @@ onMounted( async () => {
 
   world.value.camera.position.set( 0, 0, 100 );
 
-
   const ambientLight = new THREE.AmbientLight( 0x404040, 1.0 );
   world.value.add( ambientLight );
   
@@ -54,17 +53,15 @@ onMounted( async () => {
   dir.position.set( 1, 1, 1 );
   world.value.add( dir ); 
 
+  const contents = new THREE.Object3D();
+  world.value.add( contents );
+
   let _ldr = new THREE.TextureLoader().load('/ss.png', _texture=>{
     _texture.colorSpace = THREE.SRGBColorSpace; 
     let _scale = 0.4;
     let _w = _texture.source.data.width;
     let _h = _texture.source.data.height;
     let _geometry = new THREE.BoxGeometry( _w * _scale, _h * _scale, 1 );
-    let _material = new THREE.MeshStandardMaterial({
-      map: _texture,
-      side: THREE.DoubleSide
-    });
-
     const material = new THREE.MeshStandardMaterial({
       color: 0xffffff,
       transparent: true,
@@ -72,10 +69,8 @@ onMounted( async () => {
     });
     let _mesh = new THREE.Mesh( _geometry, material );
     _mesh.position.z = -100;
-    world.value.add( _mesh ); 
+    // contents.add( _mesh ); 
   })
-
-
 
   let _ldr0 = new THREE.TextureLoader().load('/assets/img/hrsk.dev.png', _texture=>{
     _texture.colorSpace = THREE.SRGBColorSpace; 
@@ -91,7 +86,7 @@ onMounted( async () => {
     let _mesh = new THREE.Mesh( _geometry, material );
     _mesh.position.x = - window.innerWidth / 2 + 32 + _w * 0.5;
     _mesh.position.z = 0;
-    world.value.add( _mesh ); 
+    contents.add( _mesh ); 
   })
 
   let _ldr1 = new THREE.TextureLoader().load('/assets/img/txt_description.png', _texture=>{
@@ -109,13 +104,93 @@ onMounted( async () => {
     _mesh.position.x = - window.innerWidth / 2 + 32 + _w * 0.5;
     _mesh.position.y = -24; 
     _mesh.position.z = 0;
-    world.value.add( _mesh ); 
+    contents.add( _mesh ); 
   })
 
-  
+  let _f = [
+    'thumb-0.jpg',
+    'thumb-1.jpg',
+    'thumb-2.jpg',
+    'thumb-3.jpg',
+    'thumb-4.jpg'
+  ]
 
+  _f = _f.concat( _f );
+
+  _f.forEach( (_item,i) =>{
+
+    let _ldr2 = new THREE.TextureLoader().load('/assets/img/sample/'+_item, _texture=>{
+      _texture.colorSpace = THREE.SRGBColorSpace; 
+      let _scale = 0.15;
+      let _w = _texture.source.data.width * _scale;
+      let _h = _texture.source.data.height * _scale;
+      let _geometry = new THREE.BoxGeometry( _w, _h, 1 );
+      const material = new THREE.MeshBasicMaterial({
+        color: 0xffffff,
+        transparent: true,
+        map: _texture
+      });
+      let _mesh = new THREE.Mesh( _geometry, material );
+
+      _mesh.position.x = ( Math.random() - 0.5 ) * window.innerWidth * 0.75;
+      _mesh.position.y = ( Math.random() - 0.5 ) * window.innerHeight * 0.75; 
+      _mesh.position.z = i;
+      _mesh.rotation.z = ( Math.random() - 0.5 ) * Math.PI * 2.0
+      contents.add( _mesh ); 
+
+      let _padding = 5;
+      let _px = _w * 0.5 + _padding;
+      let _py = _h * 0.5 + _padding;
+
+      let _pgeom = new THREE.BufferGeometry();
+      const _positions = new Float32Array([
+        - _px, - _py, 0,
+        _px, - _py, 0,
+        - _px, _py, 0,
+        _px, _py, 0,
+      ]);
+      _pgeom.setAttribute('position', new THREE.BufferAttribute(_positions, 3));
+      const _bm0 = new THREE.PointsMaterial({
+        transparent: true,
+        opacity: 0.8,
+        blending: THREE.AdditiveBlending
+      });
+
+      const _particle = new THREE.Points( _pgeom, _bm0 );
+      _mesh.add( _particle );
+
+      _px = _w * 0.5 + _padding;
+      _py = _h * 0.5 + _padding;
+      _padding *= 2;
+      let _pgeomL= new THREE.BufferGeometry();
+      const _positionsL = new Float32Array([
+        - _px - _padding, - _py, 0,
+        _px + _padding, - _py, 0,
+        - _px - _padding, _py, 0,
+        _px + _padding, _py, 0,
+
+        - _px, - _py - _padding, 0,
+        - _px, _py + _padding, 0,
+        _px, - _py - _padding, 0,
+        _px, _py + _padding, 0,
+      ]);
+      _pgeomL.setAttribute('position', new THREE.BufferAttribute(_positionsL, 3));
+      const _bm1 = new THREE.LineBasicMaterial({
+        transparent: true,
+        opacity: 0.2,
+        blending: THREE.AdditiveBlending
+      });
+      const _line = new THREE.LineSegments( _pgeomL, _bm1 );
+      _mesh.add( _line )
+
+
+
+    })
   
+  });
   //  frame
+  let _frameObject = new THREE.Object3D()
+  world.value.add( _frameObject );
   {
     const _padding = 16;
 
@@ -129,10 +204,8 @@ onMounted( async () => {
     const _r1 = _footer.getBoundingClientRect();
 
 
-    const _headBottom = _h/2 - _r0.bottom;
+    const _headBottom = _h/2 - _r0.bottom-1;
     const _footerTop = - ( _r1.top - _h/2 );
-
-    console.log( _r0, _r1  )
 
     const _goem0 = new THREE.BufferGeometry();
     const _positions = new Float32Array([
@@ -161,7 +234,7 @@ onMounted( async () => {
 
     const _line = new THREE.LineSegments( _goem0, _bm0 );
     _line.position.z = 50;
-    world.value.add( _line );
+    _frameObject.add( _line );
 
 
     const _goem1 = new THREE.BufferGeometry();
@@ -184,13 +257,24 @@ onMounted( async () => {
     });
     const _points = new THREE.Points( _goem1, _bm1 );
     _points.position.z = 50;
-    world.value.add( _points );
+    _frameObject.add( _points );
   }
+
+  // pseudo scroll
+  let _scroll = 0;
+  window.addEventListener('wheel', (e) => {
+    _scroll += e.deltaY;
+    _scroll = Math.max( 0, _scroll );
+    _scroll = Math.min( window.innerHeight, _scroll );
+    // world.value.camera.position.y = - _scroll;
+    // world.value.focus.y = - _scroll;
+    contents.position.y = _scroll;
+  });
 
 });
 
 onUnmounted(() => {
-  window.removeEventListener('resize', resize);
+  world.value.dispose();
 });
 
 </script>
@@ -205,7 +289,6 @@ header
   padding: 16px;
   width calc( 100% - 34px );
   backdrop-filter: blur( 8px );
-
 
 footer
   backdrop-filter: blur( 8px );
