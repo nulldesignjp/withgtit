@@ -56,10 +56,17 @@ onMounted( async () => {
   // console.log('r182で利用可能なノイズ関数一覧:', noiseFunctions);
   ['interleavedGradientNoise', 'mx_cell_noise_float', 'mx_fractal_noise_float', 'mx_fractal_noise_vec2', 'mx_fractal_noise_vec3', 'mx_fractal_noise_vec4', 'mx_noise_float', 'mx_noise_vec3', 'mx_noise_vec4', 'mx_unifiednoise2d', 'mx_unifiednoise3d', 'mx_worley_noise_float', 'mx_worley_noise_vec2', 'mx_worley_noise_vec3', 'triNoise3D']
 
+  let size = {
+    width: window.innerWidth,
+    height: window.innerHeight,
+    pixelRatio: window.devicePixelRatio
+  }
+
   const renderer = new WebGPURenderer({
     canvas: webglview.value,
     antialias: true,
-    preserveDrawingBuffer: true
+    preserveDrawingBuffer: true,
+    forceWebGL: false
   });
   renderer.setClearColor( 0x181818 );
   renderer.setSize( window.innerWidth, window.innerHeight );
@@ -132,7 +139,7 @@ onMounted( async () => {
     _mesh.position.z = -100;
     scene.add( _mesh ); 
   })
-
+  
   const _geometry = new THREE.PlaneGeometry( 100, 100 );
   const _bm = new MeshBasicNodeMaterial();
   const myFloat = uniform( 1.0 );
@@ -145,55 +152,72 @@ onMounted( async () => {
 
   //  positionNode
 
-  const _planeGeometry = new THREE.PlaneGeometry( 100, 100, 100, 100 );
-  _planeGeometry.rotateX( Math.PI / 2 );
-  const positionMaterial = new MeshStandardNodeMaterial({
-    side: THREE.DoubleSide,
-    flatShading: false // 滑らかな陰影にする場合
-  });
+    // 1. ノイズ計算を関数化する（複数回呼び出すため）
+    const getNoiseHeight = ( pos ) => {
+      let noise = TSL.mx_fractal_noise_float( pos.xz.mul(0.01).add(time.mul(0.5)) );
+      return noise.mul(20);
+    };
 
-  // 1. ノイズ計算を関数化する（複数回呼び出すため）
-  const getNoiseHeight = ( pos ) => {
-    let noise = TSL.mx_fractal_noise_float( pos.xz.mul(0.01).add(time.mul(0.5)) );
-    return noise.mul(20);
-  };
+    const __positionNode = Fn(()=>{
+      let pos = positionLocal.toVar();
+      
+      // 現在の高さ
+      let h = getNoiseHeight(pos);
+      pos.y.assign(h);
 
-  const __positionNode = Fn(()=>{
-    let pos = positionLocal.toVar();
-    
-    // 現在の高さ
-    let h = getNoiseHeight(pos);
-    pos.y.assign(h);
+      const eps = 0.1;
 
-    const eps = 0.1;
+      // 数学的な「偏微分（傾き）」を近似計算する
+      // f(x + eps) - f(x)
+      let h_dx = getNoiseHeight(pos.add(vec3(eps, 0, 0))).sub(h);
+      let h_dz = getNoiseHeight(pos.add(vec3(0, 0, eps))).sub(h);
 
-    // 数学的な「偏微分（傾き）」を近似計算する
-    // f(x + eps) - f(x)
-    let h_dx = getNoiseHeight(pos.add(vec3(eps, 0, 0))).sub(h);
-    let h_dz = getNoiseHeight(pos.add(vec3(0, 0, eps))).sub(h);
+      // 導き出した公式: (-df/dx, 1, -df/dz) に eps のスケールを考慮
+      // y成分（1.0にあたる部分）に eps を入れることで比率を合わせる
+      let normal = vec3( h_dx.negate(), eps, h_dz.negate() ).normalize();
 
-    // 導き出した公式: (-df/dx, 1, -df/dz) に eps のスケールを考慮
-    // y成分（1.0にあたる部分）に eps を入れることで比率を合わせる
-    let normal = vec3( h_dx.negate(), eps, h_dz.negate() ).normalize();
+      // 「形」と「光」を物理的に一致させる法線
+      positionMaterial.normalNode = normal;
 
-    // 「形」と「光」を物理的に一致させる法線
-    positionMaterial.normalNode = normal;
+      return pos;
+    });
 
-    return pos;
-  });
+    const _planeGeometry = new THREE.PlaneGeometry( 100, 100, 100, 100 );
+    _planeGeometry.rotateX( - Math.PI / 2 );
+    const positionMaterial = new MeshStandardNodeMaterial({
+      side: THREE.DoubleSide,
+      flatShading: false // 滑らかな陰影にする場合
+    });
 
-  positionMaterial.colorNode = color( 0xFFFFFF ); 
-  positionMaterial.positionNode = __positionNode(); 
+    positionMaterial.colorNode = color( 0xFFFFFF ); 
+    positionMaterial.positionNode = __positionNode(); 
 
-  const _planeN = new THREE.Mesh( _planeGeometry, positionMaterial );
-  _planeN.position.x = -150;
-  _planeN.position.z = -50;
-  _planeN.rotation.x = Math.PI / 8;
-  _planeN.rotation.y = Math.PI / 8;
-  scene.add( _planeN );
+    const _planeN = new THREE.Mesh( _planeGeometry, positionMaterial );
+    _planeN.position.x = -150;
+    _planeN.position.y = 0;
+    _planeN.position.z = -50;
+    _planeN.rotation.x = Math.PI / 8;
+    _planeN.rotation.y = Math.PI / 8;
+    scene.add( _planeN );
 
+    const wgeo = new THREE.PlaneGeometry( 100, 100, 10, 10 );
+    wgeo.rotateX( Math.PI / 2 );
+    const wmat = new MeshBasicNodeMaterial({
+      wireframe: true,
+      transparent: true
+    });
+    wmat.colorNode = color( 0xFF0000 );
+    wmat.positionNode = __positionNode();
+    wmat.opacityNode = float(0.5);
+    const wmesh = new THREE.Mesh( wgeo, wmat );
+    wmesh.position.x = - 150;
+    wmesh.position.y = 5;
+    wmesh.position.z = - 50;
+    wmesh.rotation.x = Math.PI / 8;
+    wmesh.rotation.y = Math.PI / 8;
+    scene.add( wmesh ); 
 
-
+  
   //  frame
   {
     const _w = window.innerWidth;
@@ -240,8 +264,7 @@ onMounted( async () => {
     scene.add( _points );
   }
 
-
-
+  
   //  animation 
   renderer.setAnimationLoop(() => {
 
@@ -251,9 +274,6 @@ onMounted( async () => {
 
     myFloat.value = Math.sin( Date.now() / 1000 ) * 0.5 + 0.5;
 
-    // _planeN.rotation.x -=0.0096
-    // _planeN.rotation.y -=0.0101
-    _planeN.rotation.y -=0.0001
 
 
 
@@ -261,10 +281,34 @@ onMounted( async () => {
     mesh.rotation.y -= 0.01;
     renderer.render( scene, camera );
   });
+
+
+  let resize = (width = window.innerWidth, height = window.innerHeight) => {
+      size.width = width;
+      size.height = height;
+      size.pixelRatio = window.devicePixelRatio;
+
+      if (camera.aspect) {
+          camera.aspect = size.width / size.height;
+      } else {
+          camera.left = - size.width * 0.5;
+          camera.right = size.width * 0.5;
+          camera.bottom = - size.height * 0.5;
+          camera.top = size.height * 0.5;
+      }
+      camera.updateProjectionMatrix();
+
+      renderer.setSize(size.width, size.height);
+      renderer.setPixelRatio(size.pixelRatio);
+  }
+  window.addEventListener('resize', ()=>{
+    resize();
+  });
   
 });
 
 onUnmounted(() => {
+  window.removeEventListener('resize', resize);
 });
 
 </script>
