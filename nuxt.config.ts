@@ -62,6 +62,9 @@ export default defineNuxtConfig({
       }
     }
   },
+  build: {
+    transpile: ['three'],
+  },
   // 実験的機能
   experimental: {
     // View Transitions APIの有効フラグ
