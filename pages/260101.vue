@@ -4,7 +4,6 @@
     h1 nulldesign.jp.
     p Learning Records and Prototype Archives
 
-
     navigation
 
   footer
@@ -14,6 +13,8 @@
         img(src="/assets/img/icon_x.jpg" alt="x.com")
       
   canvas(ref="webglview").webglview
+
+  iframe(src="/20180627/")
 
 
   
@@ -42,7 +43,11 @@ onMounted( async () => {
   world.value = new TheWorld({
     canvas: webglview.value,
     isOrthographic: true,
+    alpha: true,
   });
+
+  world.value.renderer.setClearColor( 0x000000, 0 );
+  world.value.renderer.setClearAlpha( 0 );
 
   world.value.camera.position.set( 0, 0, 100 );
 
@@ -114,8 +119,6 @@ onMounted( async () => {
     'thumb-3.jpg',
     'thumb-4.jpg'
   ]
-
-  _f = _f.concat( _f );
 
   _f.forEach( (_item,i) =>{
 
@@ -293,6 +296,16 @@ header
 footer
   backdrop-filter: blur( 8px );
   width calc( 100% - 34px );
+
+iframe
+  position fixed
+  top 0
+  left 0
+  border none
+  width: 100%
+  height 100vh
+  z-index -2
+
 
 
 </style>  
