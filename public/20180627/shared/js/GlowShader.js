@@ -3,8 +3,8 @@
 THREE.GlowShader = {
 	uniforms: {
 		"tDiffuse": { type: "t", value: null },
-		"time":     { type: "f", value: 0.0 },
-		"resolution":     { type: "f", value: new THREE.Vector2( window.innerWidth, window.innerHeight ) }
+		"time": { type: "f", value: 0.0 },
+		"resolution": { type: "f", value: new THREE.Vector2(window.innerWidth, window.innerHeight) }
 	},
 
 	vertexShader: [
@@ -21,9 +21,9 @@ THREE.GlowShader = {
 		"uniform vec2 resolution;",
 
 		"void main() {",
-			"vec2 uv = gl_FragCoord.xy / resolution.xy;",
-			"gl_FragColor = texture2D(tDiffuse, uv);",
-			"gl_FragColor.rgb *= _d;",
+		"vec2 uv = gl_FragCoord.xy / resolution.xy;",
+		"gl_FragColor = texture2D(tDiffuse, uv);",
+		//"gl_FragColor.rgb *= _d;",
 		"}"
 
 	].join("\n")

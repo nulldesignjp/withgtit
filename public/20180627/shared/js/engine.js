@@ -31,6 +31,17 @@ window.onload = function () {
 
 
 
+
+	// setInterval(() => {
+	// 	_unlimitedParticles.forEach((u) => {
+	// 		u.particleUniforms.planeColor.value.r = Math.random();
+	// 		u.particleUniforms.planeColor.value.g = Math.random();
+	// 		u.particleUniforms.planeColor.value.b = Math.random();
+	// 	});
+	// }, 6000);
+
+
+
 	/*
 		functions
 	*/
@@ -54,17 +65,19 @@ window.onload = function () {
 		_effect.enabled = true;
 		_effect.renderToScreen = false;
 		_effect.uniforms.time.value = 0;
-		//_world.addPass( _effect );
+		_world.addPass(_effect);
 
 		var _effect = new THREE.ShaderPass(THREE.MonoShader);
 		_effect.enabled = true;
 		_effect.renderToScreen = false;
-		//_world.addPass( _effect );
+		// _world.addPass(_effect);
 
 		var _effect = new THREE.ShaderPass(THREE.RGBNoiseShader);
 		_effect.enabled = true;
 		_effect.renderToScreen = false;
-		//_world.addPass( _effect );
+		// _world.addPass(_effect);
+
+
 	}
 }
 
@@ -95,7 +108,7 @@ class UnlimitedParticles {
 			backbuffer: { value: null },
 
 			// 'planeColor': { type: "c", value: new THREE.Color(0.8, 0.8, 0.8) },
-			'planeColor': { type: "c", value: new THREE.Color(Math.random() * 0.1 + 0.05, Math.random() * 0.3 + 0.3, Math.random() * 0.3 + 0.6) },
+			'planeColor': { type: "c", value: new THREE.Color(Math.random() * 0.1 + 0.1, Math.random() * 0.3 + 0.3, Math.random() * 0.3 + 0.6) },
 			'lightPosition': { type: "v3", value: this.world.directional.position },
 			'lightColor': { type: "c", value: this.world.directional.color },
 			'ambientColor': { type: "c", value: this.world.ambient.color },
@@ -118,19 +131,19 @@ class UnlimitedParticles {
 		this.world.add(this.particles);
 
 		//	custom
-		// _particles.castShadow = true;
-		// _particles.receiveShadow = true;
-		// _world.renderer.shadowMapEnabled = true;
-		// _world.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-		// _world.directional.castShadow = true;
-		// _world.directional.shadow.mapSize.width = 1024;
-		// _world.directional.shadow.mapSize.height = 1024;
-		// _world.directional.shadow.camera.near = 0.5;
-		// _world.directional.shadow.camera.far = 1600;
-		// _world.directional.shadow.camera.top = 500;
-		// _world.directional.shadow.camera.bottom = -500;
-		// _world.directional.shadow.camera.left = -500;
-		// _world.directional.shadow.camera.right = 500;
+		// this.particles.castShadow = true;
+		// this.particles.receiveShadow = true;
+		// this.world.renderer.shadowMapEnabled = true;
+		// this.world.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+		// this.world.directional.castShadow = true;
+		// this.world.directional.shadow.mapSize.width = 1024;
+		// this.world.directional.shadow.mapSize.height = 1024;
+		// this.world.directional.shadow.camera.near = 0.5;
+		// this.world.directional.shadow.camera.far = 1600;
+		// this.world.directional.shadow.camera.top = 500;
+		// this.world.directional.shadow.camera.bottom = -500;
+		// this.world.directional.shadow.camera.left = -500;
+		// this.world.directional.shadow.camera.right = 500;
 
 	}
 
@@ -210,6 +223,7 @@ class UnlimitedParticles {
 	generateGeometry() {
 		var _box = new THREE.BoxBufferGeometry(2, 8, 0.1);
 		//	var _box = new THREE.ConeBufferGeometry( 3, 6, 3 );
+
 		_box.rotateZ(- Math.PI * 0.5);
 
 		var _geometry = new THREE.BufferGeometry();
