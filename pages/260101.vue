@@ -6,6 +6,12 @@
 
     navigation
 
+
+  article.kv
+    .inner
+      p Power By nulldesign.jp.
+      span &nbsp;
+
   footer
     p.copyright © 2025 nulldesign.
     p.sns
@@ -39,6 +45,18 @@ useHead(() => ({
 } ));
 
 onMounted( async () => {
+
+
+  setTimeout(()=>{
+    let _kv = document.querySelector('article.kv')
+
+    _kv.classList.add('open')
+
+    let _p = document.querySelector('article.kv p')
+    _p.classList.add('active')
+
+
+  },2000)
 
   world.value = new TheWorld({
     canvas: webglview.value,
@@ -77,9 +95,9 @@ onMounted( async () => {
     // contents.add( _mesh ); 
   })
 
-  let _ldr0 = new THREE.TextureLoader().load('/assets/img/hrsk.dev.png', _texture=>{
+  let _ldr0 = new THREE.TextureLoader().load('/assets/img/nulldesign.jp.png', _texture=>{
     _texture.colorSpace = THREE.SRGBColorSpace; 
-    let _scale = 0.25;
+    let _scale = 0.5;
     let _w = _texture.source.data.width * _scale;
     let _h = _texture.source.data.height * _scale;
     let _geometry = new THREE.BoxGeometry( _w, _h, 1 );
@@ -307,5 +325,45 @@ iframe
   z-index -2
 
 
+article.kv
+  position fixed
+  top 50%
+  left 0
+  width 100%
+  height 0
+  transform: translateY(-50%);
+  border-top 1px solid rgba(255,255,255,0.2)
+  border-bottom 1px solid rgba(255,255,255,0.2)
+  overflow hidden
+  
+  transition height 1.5s cubic-bezier(0.83, 0, 0.17, 1)
+
+  .inner
+    margin 0 auto
+    width calc( 100% - 2px )
+    height 100%
+    backdrop-filter: blur( 8px );
+    display flex
+    justify-content center
+    align-items center
+
+    p
+      margin 0
+      padding 0
+      line-height 1
+      font-size 2em
+      color #fff
+      font-family "EB Garamond", serif;
+      letter-spacing 0.5em
+      opacity 0
+
+      transition letter-spacing 2.5s cubic-bezier(0.83, 0, 0.17, 1), opacity 2.5s cubic-bezier(0.83, 0, 0.17, 1)
+
+      &.active
+        letter-spacing 0.125em
+        opacity 1 
+
+  &.open
+    height 100px
 
 </style>  
