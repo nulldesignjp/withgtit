@@ -57,8 +57,61 @@ export default class TheWorld {
             new THREE.OrthographicCamera(-this.size.width / 2, this.size.width / 2, this.size.height / 2, -this.size.height / 2, 0.1, 3000) :
             new THREE.PerspectiveCamera(45, this.size.width / this.size.height, 0.1, 1000);
         this.focus = new THREE.Vector3();
+
+        // iOS18 / iPhone16Pro fix
+        let context = null;
+        let canvas = this.props.canvas;
+
+        try {
+            if (!canvas) {
+                canvas = document.createElement('canvas');
+            }
+
+            const contextAttributes = {
+                alpha: true,
+                antialias: true,
+                preserveDrawingBuffer: true,
+                depth: true,
+                stencil: true,
+                powerPreference: 'high-performance'
+            };
+
+            context = canvas.getContext('webgl2', contextAttributes) || canvas.getContext('webgl', contextAttributes);
+
+            if (context) {
+                // Patch getShaderPrecisionFormat
+                if (context.getShaderPrecisionFormat) {
+                    const originalGetShaderPrecisionFormat = context.getShaderPrecisionFormat.bind(context);
+                    context.getShaderPrecisionFormat = function (shaderType, precisionType) {
+                        const result = originalGetShaderPrecisionFormat(shaderType, precisionType);
+                        if (result === null) {
+                            // Return reasonable highp defaults
+                            return { rangeMin: 127, rangeMax: 127, precision: 23 };
+                        }
+                        return result;
+                    };
+                }
+
+                // Patch getContextAttributes
+                // iOS18 WebGLContext might return null immediately after creation
+                if (context.getContextAttributes) {
+                    const originalGetContextAttributes = context.getContextAttributes.bind(context);
+                    context.getContextAttributes = function () {
+                        const attributes = originalGetContextAttributes();
+                        if (attributes === null) {
+                            return contextAttributes;
+                        }
+                        return attributes;
+                    }
+                }
+            }
+        } catch (e) {
+            console.warn('WebGL context path failed', e);
+        }
+
         this.renderer = new THREE.WebGLRenderer({
-            canvas: this.props.canvas,
+            canvas: canvas,
+            context: context,
             antialias: true,
             preserveDrawingBuffer: true
         });

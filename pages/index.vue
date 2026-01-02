@@ -34,8 +34,6 @@ import Wire from '~/scripts/Wire';
 const webglview = ref(null)
 const world = useState('world', () => null)
 
-
-
 useHead(() => ({
   title: 'untitled',
   bodyAttrs: {
@@ -45,30 +43,9 @@ useHead(() => ({
 
 onMounted( async () => {
  
-  world.value = new TheWorld({
-    canvas: webglview.value,
-    backgroundColor: 0x181818,
-    isOrthographic: false, 
-    isOrbitControls: true,
-  });
-
-
-  world.value.camera.position.set( 0, 0, 50 );
-  world.value.camera.far = 1000;
-  world.value.camera.lookAt(0,0,0);
-
-  //  camera settting
-  if( !world.value.props.isOrthographic )
-  {
-     // Adjust if needed, or leave defaults
-  }
-
-
-  
 });
 
 onUnmounted(() => {
-  world.value.dispose();
 });
 
 </script>
