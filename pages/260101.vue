@@ -309,10 +309,10 @@ header
 
   padding: 16px;
   width calc( 100% - 34px );
-  backdrop-filter: blur( 8px );
+  backdrop-filter: blur( 16px );
 
 footer
-  backdrop-filter: blur( 8px );
+  backdrop-filter: blur( 16px );
   width calc( 100% - 34px );
 
 iframe
@@ -342,7 +342,7 @@ article.kv
     margin 0 auto
     width calc( 100% - 2px )
     height 100%
-    backdrop-filter: blur( 8px );
+    backdrop-filter: blur( 16px );
     display flex
     justify-content center
     align-items center
@@ -357,13 +357,13 @@ article.kv
       letter-spacing 0.5em
       opacity 0
 
-      transition letter-spacing 2.5s cubic-bezier(0.83, 0, 0.17, 1), opacity 2.5s cubic-bezier(0.83, 0, 0.17, 1)
+      transition letter-spacing 2.0s cubic-bezier(0.83, 0, 0.17, 1), opacity 2.0s cubic-bezier(0.83, 0, 0.17, 1)
 
       &.active
         letter-spacing 0.125em
         opacity 1 
 
   &.open
-    height 100px
+    height 25vh
 
 </style>  
