@@ -5,23 +5,14 @@
 window.onload = function () {
 
 	//	prop
-	var _particles;
-
-	//	GPU prop
-	var WIDTH = 128;
-	var PARTICLES = WIDTH * WIDTH;
-	var gpuCompute;
-	var velocityVariable, velocityUniforms;
-	var positionVariable, positionUniforms;
-	var particleUniforms;
-	var effectController;
-
-
+	var _unlimitedParticles = []
 
 	//	FadeIn
-	$('#siteBody').addClass('open');
+	let _siteBody = document.getElementById('siteBody');
+	_siteBody.classList.add('open');
+
 	var _world = new world('webglView');
-	_world.camera.position.set(0, 0, 200);
+	_world.camera.position.set(0, 0, 350);
 
 	_world.controls.autoRotate = false;
 	_world.controls.autoRotateSpeed = 0.1;
@@ -30,84 +21,12 @@ window.onload = function () {
 	_world.controls.enabled = true;
 	generateEffects();
 
-	particleUniforms = {
-		time: { value: 0 },
-		texturePosition: { value: null },
-		textureVelocity: { value: null },
-		backbuffer: { value: null },
+	const NUM = 16;
 
-		'planeColor': { type: "c", value: new THREE.Color(0.8, 0.8, 0.8) },
-		'lightPosition': { type: "v3", value: _world.directional.position },
-		'lightColor': { type: "c", value: _world.directional.color },
-		'ambientColor': { type: "c", value: _world.ambient.color },
-		'fogColor': { type: "c", value: _world.scene.fog.color },
-		'fogNear': { type: "f", value: _world.scene.fog.near },
-		'fogFar': { type: "f", value: _world.scene.fog.far },
-	}
-
-	var _geometry = generateGeometry();
-	var _material = new THREE.ShaderMaterial({
-		uniforms: particleUniforms,
-		vertexShader: document.getElementById('boxVertexShader').textContent,
-		fragmentShader: document.getElementById('boxFragmentShader').textContent,
-		transparent: true,
-		//wireframe: true,
-		fog: true,
-
-	});
-	var _particles = new THREE.Mesh(_geometry, _material);
-	_world.add(_particles);
-
-	//	shadow
-	// _particles.castShadow = true;
-	// _particles.receiveShadow = true;
-	// _world.renderer.shadowMapEnabled = true;
-	// _world.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-	// _world.directional.castShadow = true;
-	// _world.directional.shadow.mapSize.width = 1024;
-	// _world.directional.shadow.mapSize.height = 1024;
-	// _world.directional.shadow.camera.near = 0.5;
-	// _world.directional.shadow.camera.far = 1600;
-	// _world.directional.shadow.camera.top = 500;
-	// _world.directional.shadow.camera.bottom = -500;
-	// _world.directional.shadow.camera.left = -500;
-	// _world.directional.shadow.camera.right = 500;
-
-
-	/*
-		ここからGPGPUの用意
-	*/
-	gpuCompute = new GPUComputationRenderer(WIDTH, WIDTH, _world.renderer);
-
-	//	演算領域の確保
-	var dtPosition = gpuCompute.createTexture();
-	var dtVelocity = gpuCompute.createTexture();
-
-	initDataField(dtPosition, dtVelocity);
-
-	//	shaderプログラムのアタッチ
-	velocityVariable = gpuCompute.addVariable('textureVelocity', document.getElementById('computeShaderVelocity').textContent, dtVelocity);
-	positionVariable = gpuCompute.addVariable('texturePosition', document.getElementById('computeShaderPosition').textContent, dtPosition);
-
-	//	おまじない
-	gpuCompute.setVariableDependencies(velocityVariable, [positionVariable, velocityVariable]);
-	gpuCompute.setVariableDependencies(positionVariable, [positionVariable, velocityVariable]);
-
-	positionUniforms = positionVariable.material.uniforms;
-	velocityUniforms = velocityVariable.material.uniforms;
-
-	positionUniforms.time = { value: 0.0 };
-	velocityUniforms.time = { value: 0.0 };
-
-	velocityVariable.material.defines.randomX = Math.random() * 100.0;
-	velocityVariable.material.defines.randomY = Math.random() * 100.0;
-	velocityVariable.material.defines.randomZ = Math.random() * 100.0;
-
-	var error = gpuCompute.init();
-	if (error !== null) {
-		console.error(error);
-	}
-
+	for (var i = 0; i < NUM; i++) {
+		let _u = new UnlimitedParticles(_world, 64);
+		_unlimitedParticles.push(_u);
+	};
 	loop(0);
 
 
@@ -117,12 +36,10 @@ window.onload = function () {
 	*/
 	function loop(_stepTime) {
 		window.requestAnimationFrame(loop);
-
-		gpuCompute.compute();
-		velocityUniforms.time.value = _stepTime * 0.001;
-
-		_particles.material.uniforms.texturePosition.value = gpuCompute.getCurrentRenderTarget(positionVariable).texture;
-		_particles.material.uniforms.textureVelocity.value = gpuCompute.getCurrentRenderTarget(velocityVariable).texture;
+		//	clone
+		_unlimitedParticles.forEach((u) => {
+			u.update(_stepTime * 0.001);
+		});
 	}
 
 	function generateEffects() {
@@ -149,8 +66,115 @@ window.onload = function () {
 		_effect.renderToScreen = false;
 		//_world.addPass( _effect );
 	}
+}
 
-	function initDataField(texturePosition, textureVelocity) {
+
+class UnlimitedParticles {
+	constructor(_world, width = 64) {
+
+		this.world = _world;
+
+		this.WIDTH = width;
+		this.PARTICLES = this.WIDTH * this.WIDTH;
+		this.velocityVariable;
+		this.velocityUniforms;
+		this.positionVariable;
+		this.positionUniforms;
+		this.particleUniforms;
+
+		this.init();
+		this.initGPU();
+	}
+
+	init() {
+		//	GPU
+		this.particleUniforms = {
+			time: { value: 0 },
+			texturePosition: { value: null },
+			textureVelocity: { value: null },
+			backbuffer: { value: null },
+
+			'planeColor': { type: "c", value: new THREE.Color(0.8, 0.8, 0.8) },
+			'lightPosition': { type: "v3", value: this.world.directional.position },
+			'lightColor': { type: "c", value: this.world.directional.color },
+			'ambientColor': { type: "c", value: this.world.ambient.color },
+			'fogColor': { type: "c", value: this.world.scene.fog.color },
+			'fogNear': { type: "f", value: this.world.scene.fog.near },
+			'fogFar': { type: "f", value: this.world.scene.fog.far },
+		}
+
+		var _geometry = this.generateGeometry();
+		var _material = new THREE.ShaderMaterial({
+			uniforms: this.particleUniforms,
+			vertexShader: document.getElementById('boxVertexShader').textContent,
+			fragmentShader: document.getElementById('boxFragmentShader').textContent,
+			transparent: true,
+			//wireframe: true,
+			fog: true,
+
+		});
+		this.particles = new THREE.Mesh(_geometry, _material);
+		this.world.add(this.particles);
+
+		//	custom
+		// _particles.castShadow = true;
+		// _particles.receiveShadow = true;
+		// _world.renderer.shadowMapEnabled = true;
+		// _world.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+		// _world.directional.castShadow = true;
+		// _world.directional.shadow.mapSize.width = 1024;
+		// _world.directional.shadow.mapSize.height = 1024;
+		// _world.directional.shadow.camera.near = 0.5;
+		// _world.directional.shadow.camera.far = 1600;
+		// _world.directional.shadow.camera.top = 500;
+		// _world.directional.shadow.camera.bottom = -500;
+		// _world.directional.shadow.camera.left = -500;
+		// _world.directional.shadow.camera.right = 500;
+
+	}
+
+	initGPU() {
+		//	
+		this.gpuCompute = new GPUComputationRenderer(this.WIDTH, this.WIDTH, this.world.renderer);
+
+		//	演算領域の確保
+		var dtPosition = this.gpuCompute.createTexture();
+		var dtVelocity = this.gpuCompute.createTexture();
+
+		this.initDataField(dtPosition, dtVelocity);
+
+		//	shaderプログラムのアタッチ
+		this.velocityVariable = this.gpuCompute.addVariable('textureVelocity', document.getElementById('computeShaderVelocity').textContent, dtVelocity);
+		this.positionVariable = this.gpuCompute.addVariable('texturePosition', document.getElementById('computeShaderPosition').textContent, dtPosition);
+
+		//	おまじない
+		this.gpuCompute.setVariableDependencies(this.velocityVariable, [this.positionVariable, this.velocityVariable]);
+		this.gpuCompute.setVariableDependencies(this.positionVariable, [this.positionVariable, this.velocityVariable]);
+
+		this.positionUniforms = this.positionVariable.material.uniforms;
+		this.velocityUniforms = this.velocityVariable.material.uniforms;
+
+		this.positionUniforms.time = { value: 0.0 };
+		this.velocityUniforms.time = { value: 0.0 };
+
+		this.velocityVariable.material.defines.randomX = Math.random() * 100.0;
+		this.velocityVariable.material.defines.randomY = Math.random() * 100.0;
+		this.velocityVariable.material.defines.randomZ = Math.random() * 100.0;
+
+		var error = this.gpuCompute.init();
+		if (error !== null) {
+			console.error(error);
+		}
+	}
+
+	update(_stepTime = 0.016) {
+		this.gpuCompute.compute();
+		this.velocityUniforms.time.value = _stepTime;
+		this.particles.material.uniforms.texturePosition.value = this.gpuCompute.getCurrentRenderTarget(this.positionVariable).texture;
+		this.particles.material.uniforms.textureVelocity.value = this.gpuCompute.getCurrentRenderTarget(this.velocityVariable).texture;
+	}
+
+	initDataField(texturePosition, textureVelocity) {
 		//	データを一度取り出す
 		var posArray = texturePosition.image.data;
 		var velArray = textureVelocity.image.data;
@@ -182,16 +206,16 @@ window.onload = function () {
 		}
 	}
 
-	function generateGeometry() {
-		var _box = new THREE.BoxBufferGeometry(4, 16, 0.1);
+	generateGeometry() {
+		var _box = new THREE.BoxBufferGeometry(2, 8, 0.1);
 		//	var _box = new THREE.ConeBufferGeometry( 3, 6, 3 );
 		_box.rotateZ(- Math.PI * 0.5);
 
 		var _geometry = new THREE.BufferGeometry();
-		var _position = new Float32Array(PARTICLES * _box.attributes.position.count * _box.attributes.position.itemSize);
-		var _normal = new Float32Array(PARTICLES * _box.attributes.normal.count * _box.attributes.normal.itemSize);
-		var _uvs = new Float32Array(PARTICLES * _box.attributes.uv.count * _box.attributes.uv.itemSize);
-		var _index = new Uint16Array(PARTICLES * _box.index.count * _box.index.itemSize);
+		var _position = new Float32Array(this.PARTICLES * _box.attributes.position.count * _box.attributes.position.itemSize);
+		var _normal = new Float32Array(this.PARTICLES * _box.attributes.normal.count * _box.attributes.normal.itemSize);
+		var _uvs = new Float32Array(this.PARTICLES * _box.attributes.uv.count * _box.attributes.uv.itemSize);
+		var _index = new Uint16Array(this.PARTICLES * _box.index.count * _box.index.itemSize);
 
 		var _idx = 0;
 		var _idy = 0;
@@ -200,7 +224,7 @@ window.onload = function () {
 		var _ida = 0;
 
 		//	position and normal
-		for (var i = 0; i < PARTICLES; i++) {
+		for (var i = 0; i < this.PARTICLES; i++) {
 			//	position
 			for (var j = 0; j < _box.attributes.position.count * _box.attributes.position.itemSize; j++) {
 				_position[_idx++] = _box.attributes.position.array[j];
@@ -209,18 +233,18 @@ window.onload = function () {
 		}
 
 		//	index
-		for (var i = 0; i < PARTICLES; i++) {
+		for (var i = 0; i < this.PARTICLES; i++) {
 			for (var j = 0; j < _box.index.count * _box.index.itemSize; j++) {
 				_index[_ida++] = _box.index.array[j] + _box.attributes.position.count * i;
 			}
 		}
 
 		var _idw = 0;
-		for (var j = 0; j < WIDTH; j++) {
-			for (i = 0; i < WIDTH; i++) {
+		for (var j = 0; j < this.WIDTH; j++) {
+			for (i = 0; i < this.WIDTH; i++) {
 				for (var k = 0; k < _box.attributes.position.count; k++) {
-					_uvs[_idw++] = i / (WIDTH - 1);
-					_uvs[_idw++] = j / (WIDTH - 1);
+					_uvs[_idw++] = i / (this.WIDTH - 1);
+					_uvs[_idw++] = j / (this.WIDTH - 1);
 				}
 			}
 		}
