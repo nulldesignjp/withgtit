@@ -21,7 +21,7 @@ window.onload = function () {
 	_world.controls.enabled = true;
 	generateEffects();
 
-	const NUM = 16;
+	const NUM = 8;
 
 	for (var i = 0; i < NUM; i++) {
 		let _u = new UnlimitedParticles(_world, 64);
@@ -94,7 +94,8 @@ class UnlimitedParticles {
 			textureVelocity: { value: null },
 			backbuffer: { value: null },
 
-			'planeColor': { type: "c", value: new THREE.Color(0.8, 0.8, 0.8) },
+			// 'planeColor': { type: "c", value: new THREE.Color(0.8, 0.8, 0.8) },
+			'planeColor': { type: "c", value: new THREE.Color(Math.random() * 0.1 + 0.05, Math.random() * 0.3 + 0.3, Math.random() * 0.3 + 0.6) },
 			'lightPosition': { type: "v3", value: this.world.directional.position },
 			'lightColor': { type: "c", value: this.world.directional.color },
 			'ambientColor': { type: "c", value: this.world.ambient.color },
