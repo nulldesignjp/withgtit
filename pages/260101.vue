@@ -7,11 +7,6 @@
     navigation
 
 
-  article.kv
-    .inner
-      p Power By nulldesign.jp.
-      span &nbsp;
-
   footer
     p.copyright © 2025 nulldesign.
     p.sns
@@ -46,17 +41,6 @@ useHead(() => ({
 
 onMounted( async () => {
 
-
-  setTimeout(()=>{
-    let _kv = document.querySelector('article.kv')
-
-    _kv.classList.add('open')
-
-    let _p = document.querySelector('article.kv p')
-    _p.classList.add('active')
-
-
-  },2000)
 
   world.value = new TheWorld({
     canvas: webglview.value,
@@ -138,77 +122,88 @@ onMounted( async () => {
     'thumb-4.jpg'
   ]
 
-  _f.forEach( (_item,i) =>{
+  const NUM = 3;
+  const _size = 200;
+  const _margin = 10;
+  const _offsetX = Math.floor( NUM / 2) - (NUM+1)%2/2;
+  const _offsetY = Math.floor( Math.floor( _f.length / NUM ) / 2 );
 
-    let _ldr2 = new THREE.TextureLoader().load('/assets/img/sample/'+_item, _texture=>{
-      _texture.colorSpace = THREE.SRGBColorSpace; 
-      let _scale = 0.15;
-      let _w = _texture.source.data.width * _scale;
-      let _h = _texture.source.data.height * _scale;
-      let _geometry = new THREE.BoxGeometry( _w, _h, 1 );
-      const material = new THREE.MeshBasicMaterial({
+  _f.forEach( ( _item, i ) =>{
+      let _x = i % NUM;
+      let _y = - Math.floor( i / NUM );
+
+      let _geom = new THREE.PlaneGeometry( _size, _size )
+      let _mat = new THREE.MeshBasicMaterial({
         color: 0xffffff,
         transparent: true,
-        map: _texture
-      });
-      let _mesh = new THREE.Mesh( _geometry, material );
-
-      _mesh.position.x = ( Math.random() - 0.5 ) * window.innerWidth * 0.75;
-      _mesh.position.y = ( Math.random() - 0.5 ) * window.innerHeight * 0.75; 
-      _mesh.position.z = i;
-      _mesh.rotation.z = ( Math.random() - 0.5 ) * Math.PI * 2.0
-      contents.add( _mesh ); 
-
-      let _padding = 5;
-      let _px = _w * 0.5 + _padding;
-      let _py = _h * 0.5 + _padding;
-
-      let _pgeom = new THREE.BufferGeometry();
-      const _positions = new Float32Array([
-        - _px, - _py, 0,
-        _px, - _py, 0,
-        - _px, _py, 0,
-        _px, _py, 0,
-      ]);
-      _pgeom.setAttribute('position', new THREE.BufferAttribute(_positions, 3));
-      const _bm0 = new THREE.PointsMaterial({
-        transparent: true,
-        opacity: 0.8,
-        blending: THREE.AdditiveBlending
-      });
-
-      const _particle = new THREE.Points( _pgeom, _bm0 );
-      _mesh.add( _particle );
-
-      _px = _w * 0.5 + _padding;
-      _py = _h * 0.5 + _padding;
-      _padding *= 2;
-      let _pgeomL= new THREE.BufferGeometry();
-      const _positionsL = new Float32Array([
-        - _px - _padding, - _py, 0,
-        _px + _padding, - _py, 0,
-        - _px - _padding, _py, 0,
-        _px + _padding, _py, 0,
-
-        - _px, - _py - _padding, 0,
-        - _px, _py + _padding, 0,
-        _px, - _py - _padding, 0,
-        _px, _py + _padding, 0,
-      ]);
-      _pgeomL.setAttribute('position', new THREE.BufferAttribute(_positionsL, 3));
-      const _bm1 = new THREE.LineBasicMaterial({
-        transparent: true,
-        opacity: 0.2,
-        blending: THREE.AdditiveBlending
-      });
-      const _line = new THREE.LineSegments( _pgeomL, _bm1 );
-      _mesh.add( _line )
-
-
-
-    })
-  
+        map: new THREE.TextureLoader().load('/assets/img/sample/'+_item)
+      })
+      let _mesh = new THREE.Mesh( _geom, _mat )
+      _mesh.position.x = ( _x - _offsetX ) * ( _size + _margin );
+      _mesh.position.y = ( _y - _offsetY ) * ( _size + _margin );
+      _mesh.position.z = 0;
+      contents.add( _mesh );  
   });
+
+  const _w = window.innerWidth;
+  const _h = window.innerHeight;
+  const _lenY = Math.floor( _f.length / NUM ) + 1;
+  let _positionsL = new Float32Array( _lenY * 3 * 4 + NUM * 3 * 4 );
+  const _offsetLength = _lenY * 3 * 4;
+  for( var i = 0; i < _lenY; i++ )
+  {
+    let _y = - i
+    let __y = _y * (_size + _margin);
+
+    _positionsL[ i * 12 + 0 ] = - _w/2;
+    _positionsL[ i * 12 + 1 ] = __y - _size/2;
+    _positionsL[ i * 12 + 2 ] = 0;
+    _positionsL[ i * 12 + 3 ] = _w/2;
+    _positionsL[ i * 12 + 4 ] = __y - _size/2;
+    _positionsL[ i * 12 + 5 ] = 0;
+
+    _positionsL[ i * 12 + 6 ] = - _w/2;
+    _positionsL[ i * 12 + 7 ] = __y + _size/2;
+    _positionsL[ i * 12 + 8 ] = 0;
+    _positionsL[ i * 12 + 9 ] = _w/2;
+    _positionsL[ i * 12 + 10 ] = __y + _size/2;
+    _positionsL[ i * 12 + 11 ] = 0;
+  }
+  for( var i = 0; i < NUM; i++ )
+  {
+    let _x = i % NUM;
+    _x = ( _x - _offsetX ) * ( _size + _margin );
+
+    _positionsL[ i * 12 + 0 + _offsetLength ] = _x - _size/2;
+    _positionsL[ i * 12 + 1 + _offsetLength ] = - _h/2 - _lenY * (_size + _margin);
+    _positionsL[ i * 12 + 2 + _offsetLength ] = 0;
+    _positionsL[ i * 12 + 3 + _offsetLength ] = _x - _size/2;
+    _positionsL[ i * 12 + 4 + _offsetLength ] = _h/2;
+    _positionsL[ i * 12 + 5 + _offsetLength ] = 0;
+
+    _positionsL[ i * 12 + 6 + _offsetLength ] = _x + _size/2;
+    _positionsL[ i * 12 + 7 + _offsetLength ] = - _h/2 - _lenY * (_size + _margin);;
+    _positionsL[ i * 12 + 8 + _offsetLength ] = 0;
+    _positionsL[ i * 12 + 9 + _offsetLength ] = _x + _size/2;
+    _positionsL[ i * 12 + 10 + _offsetLength ] = _h/2;
+    _positionsL[ i * 12 + 11 + _offsetLength ] = 0;
+  }
+
+  let _geomL = new THREE.BufferGeometry();
+  _geomL.setAttribute('position', new THREE.BufferAttribute(_positionsL, 3));
+  let _matL = new THREE.LineBasicMaterial({
+    color: 0xffffff,
+    transparent: true,
+    opacity: 0.2,
+    blending: THREE.AdditiveBlending
+  });
+
+  _geomL.computeBoundingBox();
+    
+  let _lineL = new THREE.LineSegments( _geomL, _matL );
+  _lineL.position.z = 50;
+  contents.add( _lineL );
+
   //  frame
   let _frameObject = new THREE.Object3D()
   world.value.add( _frameObject );
@@ -323,47 +318,5 @@ iframe
   width: 100%
   height 100vh
   z-index -2
-
-
-article.kv
-  position fixed
-  top 50%
-  left 0
-  width 100%
-  height 0
-  transform: translateY(-50%);
-  border-top 1px solid rgba(255,255,255,0.2)
-  border-bottom 1px solid rgba(255,255,255,0.2)
-  overflow hidden
-  
-  transition height 1.5s cubic-bezier(0.83, 0, 0.17, 1)
-
-  .inner
-    margin 0 auto
-    width calc( 100% - 2px )
-    height 100%
-    backdrop-filter: blur( 16px );
-    display flex
-    justify-content center
-    align-items center
-
-    p
-      margin 0
-      padding 0
-      line-height 1
-      font-size 2em
-      color #fff
-      font-family "EB Garamond", serif;
-      letter-spacing 0.5em
-      opacity 0
-
-      transition letter-spacing 2.0s cubic-bezier(0.83, 0, 0.17, 1), opacity 2.0s cubic-bezier(0.83, 0, 0.17, 1)
-
-      &.active
-        letter-spacing 0.125em
-        opacity 1 
-
-  &.open
-    height 25vh
 
 </style>  
