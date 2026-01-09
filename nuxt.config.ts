@@ -60,6 +60,20 @@ export default defineNuxtConfig({
           ]
         }
       }
+    },
+    server: {
+      watch: {
+        // ファイル変更をチェックする間隔（ミリ秒）
+        interval: 100,
+        // OSのイベントではなくポーリングを使用するか（Docker環境などで有効）
+        usePolling: true,
+        // 監視から除外するディレクトリ
+        ignored: ['**/node_modules/**', '**/dist/**']
+      },
+      hmr: {
+        // HMRの接続待機時間（ミリ秒）
+        timeout: 30000
+      }
     }
   },
   build: {
