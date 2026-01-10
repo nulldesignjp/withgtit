@@ -133,14 +133,21 @@ void main(){
     vec4 tmpPos = texture2D( texturePosition, uv );
     vec4 tmpVel = texture2D( textureVelocity, uv );
     vec3 vel = tmpVel.xyz;
-      // Use defines for random offset per instance
-    vec3 noisePos = tmpPos.xyz * 0.0025 + vec3(randomX, randomY, randomZ) * 0.5 + time * 0.1;
-    vec3 cn = curlNoise( noisePos );
     
     // Retrieve per-particle speed variation from alpha channel
     float pSeed = tmpVel.w;
-    // Apply force with variation
-    vel += cn * 5.0 * pSeed;
+    
+    // Add per-particle time offset and scale variation for diverse movement
+    float timeOffset = pSeed * 5.0; // Very subtle phase difference
+    float scaleVariation = 0.95 + pSeed * 0.10; // 0.95x to 1.05x (minimal)
+    
+    // Use defines for random offset per instance
+    vec3 noisePos = tmpPos.xyz * 0.0025 * scaleVariation + vec3(randomX, randomY, randomZ) * 0.5 + (time + timeOffset) * 0.1;
+    vec3 cn = curlNoise( noisePos );
+    
+    // Apply force with very subtle variation (0.90x to 1.10x)
+    float forceMultiplier = 0.90 + pSeed * 0.2;
+    vel += cn * 5.0 * forceMultiplier;
 
     //  Damping
     vel *= 0.96;
@@ -535,7 +542,8 @@ uniform sampler2D textureVelocity;
             velArray[k + 0] = (Math.random() - 0.5) * 8
             velArray[k + 1] = (Math.random() - 0.5) * 8
             velArray[k + 2] = (Math.random() - 0.5) * 8
-            velArray[k + 3] = Math.random() * 0.4 + 0.80;
+            // Very subtle variation range: 0.90 to 1.10 (nearly uniform)
+            velArray[k + 3] = Math.random() * 0.2 + 0.90;
         }
     }
 }
