@@ -205,7 +205,9 @@ void main()
     // Asymmetric Size
     // Near (Foreground): Massive Bokeh (up to 72px)
     // Far (Background): Smaller Bokeh (up to 12px)
-    float bokehScale = (delta < 0.0) ? 72.0 : 12.0;
+    // Seamless transition using smoothstep
+    float depthFactor = smoothstep(-100.0, 100.0, delta); // 0.0=Foreground, 1.0=Background
+    float bokehScale = mix(72.0, 12.0, depthFactor);
 
     gl_PointSize = 1.8 + blur * bokehScale;
     }`
@@ -322,10 +324,9 @@ uniform sampler2D textureVelocity;
     // Base alpha: In-focus items should be more solid/visible.
     float baseAlpha = 0.4 + speedFactor * 0.6;
     
-    // Boost sharpness for in-focus items
-    if (vBlur < 0.2) {
-       baseAlpha += 0.4;
-    }
+    // Boost sharpness for in-focus items (seamless transition)
+    float focusBoost = smoothstep(0.3, 0.0, vBlur) * 0.4;
+    baseAlpha += focusBoost;
 
     // Final Alpha: Shape * Base
     float finalAlpha = shape * baseAlpha;
@@ -337,16 +338,13 @@ uniform sampler2D textureVelocity;
     
     finalAlpha = min(1.0, finalAlpha); // Clamp
     
-    // Asymmetric attenuation
-    if (vDelta > 0.0) {
-        // BACKGROUND: Fade out strongly if blurred
-        // The further back, the more transparent
-        if( vBlur > 0.2 ) finalAlpha *= 0.2;
-    } else {
-        // FOREGROUND: Keep visible, large bokeh
-        // Slight attenuation just to handle overlap
-        if( vBlur > 0.2 ) finalAlpha *= 0.5;
-    }
+    // Asymmetric attenuation (seamless transition)
+    // BACKGROUND: Fade out strongly if blurred (0.2)
+    // FOREGROUND: Keep visible, large bokeh (0.5)
+    float blurAttenuation = smoothstep(0.15, 0.25, vBlur);
+    float depthFactor = smoothstep(-50.0, 50.0, vDelta); // 0.0=Foreground, 1.0=Background
+    float attenuationAmount = mix(0.5, 0.2, depthFactor);
+    finalAlpha *= mix(1.0, attenuationAmount, blurAttenuation);
 
     // Twinkling / Glittering Effect (Kirakira)
     float pSeed = velTemp.w * 100.0; // Recover seed stored in alpha (approx 0.8-1.2)
