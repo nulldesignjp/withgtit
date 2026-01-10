@@ -114,8 +114,10 @@ uniform float time;
 uniform sampler2D texturePosition;
 uniform sampler2D textureVelocity;
 
+attribute vec2 reference;
+
 varying vec3 vNormal;
-varying vec2 vUv;
+varying vec2 vReference;
 
 //const float PI = 3.14159265;
 
@@ -125,73 +127,14 @@ mat2 rotate2d(float _angle){
         sin(_angle),cos(_angle));
 }
 
-mat4 rotateX3d( float e ){
-    return mat4(
-        1,  0,    0,  0,
-        0,  cos(e),   -sin(e),   0,
-        0,  sin(e),   cos(e),    0,
-        0,  0,    0,  1
-    );
-}
-
-mat4 rotateY3d( float e ){
-    return mat4(
-        cos(e),  0,    sin(e),  0,
-        0,  1,   0,   0,
-        -sin(e),  0,   cos(e),    0,
-        0,  0,    0,  1
-    );
-}
-
-mat4 rotateZ3d( float e ){
-    return mat4(
-        cos(e),  -sin(e),    0,  0,
-        sin(e),  cos(e),   0,   0,
-        0,  0,  1,    0,
-        0,  0,    0,  1
-    );
-}
-
-mat4 rotate3D( vec3 _r ){
-    return rotateX3d( _r.x ) * rotateY3d( _r.y ) * rotateZ3d( _r.z );
-}
-
-mat4 translate3d( vec3 _t ){
-    return mat4(
-            1,0,0,_t.x,
-            0,1,0,_t.y,
-            0,0,1,_t.z,
-            0,0,0,1
-        );
-}
-
-mat4 scale3d( vec3 _s ){
-    return mat4(
-            _s.x,0,0,0,
-            0,_s.y,0,0,
-            0,0,_s.z,0,
-            0,0,0,1
-        );
-}
-
-mat4 translate4D( vec3 _t, vec3 _r, vec3 _s ){
-    return translate3d( _t ) * rotate3D( _r ) * scale3d( _s );
-}
-
-
-float atan2(in float y, in float x)
-{
-    return x == 0.0 ? sign(y)*3.141592653589793/2.0 : atan(y, x);
-}
-
 void main()
 {
-    vUv = uv;
+    vReference = reference;
 
-    vec4 posTemp = texture2D( texturePosition, uv );
+    vec4 posTemp = texture2D( texturePosition, reference );
     vec3 pos = posTemp.xyz;
 
-    vec4 velTemp = texture2D( textureVelocity, uv );
+    vec4 velTemp = texture2D( textureVelocity, reference );
     vec3 vel = velTemp.xyz;
     vec3 velocity = normalize( vel );
 
@@ -239,12 +182,18 @@ uniform float fogFar;
 
 
 varying vec3 vNormal;
-varying vec2 vUv;
+varying vec2 vReference;
 
 uniform sampler2D textureVelocity;
 
-void main()
-{
+    vec3 hueShift( vec3 color, float hue) {
+        const vec3 k = vec3(0.57735, 0.57735, 0.57735);
+        float cosAngle = cos(hue);
+        return vec3(color * cosAngle + cross(k, color) * sin(hue) + k * dot(k, color) * (1.0 - cosAngle));
+    }
+
+    void main()
+    {
     //gl_FragColor = vec4(uv,0.5+0.5*sin(time),1.0);
 
     //vec2 uv = gl_FragCoord.xy / resolution.xy;
@@ -255,17 +204,19 @@ void main()
     vec3 L = normalize( viewLightPosition.xyz );
     float dotNL = dot( N, L );
 
-    vec4 velTemp = texture2D( textureVelocity, vUv )/100.0;
+    vec4 velTemp = texture2D( textureVelocity, vReference )/100.0;
     
     velTemp.rgb = vec3(0.1);
 
 
+    // vec3 _c = hueShift(planeColor, time * 0.05);
+    vec3 _c = planeColor;
 
-    vec3 diffuse = (planeColor + velTemp.xyz) * lightColor * max( dotNL, 0.0 );
-    vec3 ambient = planeColor * ambientColor;
+    vec3 diffuse = (_c + velTemp.xyz) * lightColor * max( dotNL, 0.0 );
+    vec3 ambient = _c * ambientColor;
 
 
-    gl_FragColor = vec4( planeColor, 1.0);
+    gl_FragColor = vec4( _c, 1.0);
     gl_FragColor *= vec4( diffuse + ambient, 1.0 );
     
 
@@ -292,6 +243,7 @@ void main()
         this.positionUniforms;
         this.particleUniforms;
 
+        this.timer = 0.0;
         this.init();
         this.initGPU();
 
@@ -314,7 +266,27 @@ void main()
             'fogFar': { type: "f", value: this.world.scene.fog.far },
         }
 
-        var _geometry = this.generateGeometry();
+        // Geometry setup
+        var _box = new THREE.BoxGeometry(2, 8, 1);
+        _box.rotateZ(-Math.PI * 0.5);
+
+        var _geometry = new THREE.InstancedBufferGeometry();
+        _geometry.index = _box.index;
+        _geometry.attributes.position = _box.attributes.position;
+        _geometry.attributes.normal = _box.attributes.normal;
+        _geometry.attributes.uv = _box.attributes.uv;
+
+        // References (Instanced Attribute)
+        var reference = new Float32Array(this.PARTICLES * 2);
+        var _idx = 0;
+        for (var i = 0; i < this.WIDTH; i++) {
+            for (var j = 0; j < this.WIDTH; j++) {
+                reference[_idx++] = i / (this.WIDTH - 1);
+                reference[_idx++] = j / (this.WIDTH - 1);
+            }
+        }
+        _geometry.setAttribute('reference', new THREE.InstancedBufferAttribute(reference, 2));
+
         var _material = new THREE.ShaderMaterial({
             uniforms: this.particleUniforms,
             vertexShader: UnlimitedParticles.boxVertexShader,
@@ -323,27 +295,12 @@ void main()
             //wireframe: true,
             side: THREE.DoubleSide,
             fog: true,
-
         });
+
         this.particles = new THREE.Mesh(_geometry, _material);
+        this.particles.frustumCulled = false; // Important for GPGPU particles that move outside initial bounds
         this.world.add(this.particles);
-
-        //	custom
-        // this.particles.castShadow = true;
-        // this.particles.receiveShadow = true;
-        // this.world.renderer.shadowMapEnabled = true;
-        // this.world.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        // this.world.directional.castShadow = true;
-        // this.world.directional.shadow.mapSize.width = 1024;
-        // this.world.directional.shadow.mapSize.height = 1024;
-        // this.world.directional.shadow.camera.near = 0.5;
-        // this.world.directional.shadow.camera.far = 1600;
-        // this.world.directional.shadow.camera.top = 500;
-        // this.world.directional.shadow.camera.bottom = -500;
-        // this.world.directional.shadow.camera.left = -500;
-        // this.world.directional.shadow.camera.right = 500;
     }
-
     initGPU() {
         //	
         this.gpuCompute = new GPUComputationRenderer(this.WIDTH, this.WIDTH, this.world.renderer);
@@ -380,7 +337,9 @@ void main()
 
     update(_stepTime = 0.016) {
         this.gpuCompute.compute();
-        this.velocityUniforms.time.value = _stepTime;
+        this.timer += _stepTime;
+        this.velocityUniforms.time.value = this.timer;
+        this.particles.material.uniforms.time.value = this.timer;
         this.particles.material.uniforms.texturePosition.value = this.gpuCompute.getCurrentRenderTarget(this.positionVariable).texture;
         this.particles.material.uniforms.textureVelocity.value = this.gpuCompute.getCurrentRenderTarget(this.velocityVariable).texture;
     }
@@ -418,59 +377,5 @@ void main()
             velArray[k + 2] = (Math.random() - 0.5) * 8
             velArray[k + 3] = 0;
         }
-    }
-
-    generateGeometry() {
-        var _box = new THREE.BoxGeometry(2, 8, 1);
-        // var _box = new THREE.PlaneGeometry(2, 8);
-
-        _box.rotateZ(- Math.PI * 0.5);
-
-        console.log(_box.attributes)
-
-        var _geometry = new THREE.BufferGeometry();
-        var _position = new Float32Array(this.PARTICLES * _box.attributes.position.count * _box.attributes.position.itemSize);
-        var _normal = new Float32Array(this.PARTICLES * _box.attributes.normal.count * _box.attributes.normal.itemSize);
-        var _uvs = new Float32Array(this.PARTICLES * _box.attributes.uv.count * _box.attributes.uv.itemSize);
-        var _index = new Uint32Array(this.PARTICLES * _box.index.count * _box.index.itemSize);
-
-        var _idx = 0;
-        var _idy = 0;
-        var _idz = 0;
-        var _idw = 0;
-        var _ida = 0;
-
-        //	position and normal
-        for (var i = 0; i < this.PARTICLES; i++) {
-            //	position
-            for (var j = 0; j < _box.attributes.position.count * _box.attributes.position.itemSize; j++) {
-                _position[_idx++] = _box.attributes.position.array[j];
-                _normal[_idz++] = _box.attributes.normal.array[j];
-            }
-        }
-
-        //	index
-        for (var i = 0; i < this.PARTICLES; i++) {
-            for (var j = 0; j < _box.index.count * _box.index.itemSize; j++) {
-                _index[_ida++] = _box.index.array[j] + _box.attributes.position.count * i;
-            }
-        }
-
-        var _idw = 0;
-        for (var j = 0; j < this.WIDTH; j++) {
-            for (var i = 0; i < this.WIDTH; i++) {
-                for (var k = 0; k < _box.attributes.position.count; k++) {
-                    _uvs[_idw++] = i / (this.WIDTH - 1);
-                    _uvs[_idw++] = j / (this.WIDTH - 1);
-                }
-            }
-        }
-
-        _geometry.setAttribute('position', new THREE.BufferAttribute(_position, _box.attributes.position.itemSize));
-        _geometry.setAttribute('normal', new THREE.BufferAttribute(_normal, _box.attributes.normal.itemSize));
-        _geometry.setAttribute('uv', new THREE.BufferAttribute(_uvs, _box.attributes.uv.itemSize));
-        _geometry.setIndex(new THREE.BufferAttribute(_index, 1));
-
-        return _geometry;
     }
 }
