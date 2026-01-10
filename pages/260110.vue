@@ -88,7 +88,9 @@ onMounted( async () => {
   particles.push( _unlimitedParticle )
 
 
-
+  setTimeout(()=>{
+    webglview.value.classList.add('active')
+  },1000);
 
 
 
@@ -209,5 +211,12 @@ iframe
   z-index -2
 
 
+.webglview
+  opacity 0
+
+  transition opacity 5.0s ease-in-out
+
+  &.active
+    opacity 1
 
 </style>  
