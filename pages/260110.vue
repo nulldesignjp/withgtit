@@ -38,8 +38,8 @@ let _intervalKey = null;
 let _upadte = ()=>{
   _intervalKey = requestAnimationFrame( _upadte );
   particles.forEach( (particle) => {
-    particle.particles.rotation.x -= 0.0001
-    particle.particles.rotation.y -= 0.0001
+    particle.particles.rotation.x -= 0.001
+    particle.particles.rotation.y -= 0.00105
     particle.update(0.016);
   } ) 
 }
@@ -87,9 +87,9 @@ onMounted( async () => {
   world.value.ambient = ambientLight;
 
   // Low count (Original)
-  // for( var i = 0; i < 8; i++ )
+  // for( var i = 0; i < 4; i++ )
   // {
-  //   let _unlimitedParticle = new UnlimitedParticle(world.value, 64);
+  //   let _unlimitedParticle = new UnlimitedParticle(world.value, 256);
   //   particles.push( _unlimitedParticle )
   // }
   

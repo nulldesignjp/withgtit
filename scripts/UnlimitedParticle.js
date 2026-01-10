@@ -298,7 +298,7 @@ uniform sampler2D textureVelocity;
     float rim = smoothstep(rimStart, 1.0, distToCenter) * (1.0 - smoothstep(0.95, 1.0, distToCenter));
     
     // Composite
-    float standardBokeh = fill * 0. + rim * rimPower * 0.5;
+    float standardBokeh = fill * 0.85 + rim * rimPower * 0.5;
 
     // (Gaussian Blur removed COMPLETELY to serve SOLID center)
     // No "softness" mixing. Pure Tamaboke.
