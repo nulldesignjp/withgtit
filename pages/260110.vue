@@ -24,7 +24,7 @@
 <script setup>
 import * as THREE from 'three';
 import StarPlatinum from '~/scripts/StarPlatinum';
-import UnlimitedParticles from '~/scripts/UnlimitedParticles';
+import UnlimitedParticle from '~/scripts/UnlimitedParticle';
 
 const world = ref(null)
 const webglview = ref(null)
@@ -82,13 +82,19 @@ onMounted( async () => {
   world.value.directional = dir;
   world.value.ambient = ambientLight;
 
-  for( var i = 0; i < 8; i++ )
-  {
-    let _unlimitedParticles = new UnlimitedParticles(world.value, 64);
-    particles.push( _unlimitedParticles )
-  }
-  // let _unlimitedParticles = new UnlimitedParticles(world.value, 256);
-  // particles.push( _unlimitedParticles )
+  // Low count (Original)
+  // for( var i = 0; i < 8; i++ )
+  // {
+  //   let _unlimitedParticle = new UnlimitedParticle(world.value, 64);
+  //   particles.push( _unlimitedParticle )
+  // }
+  
+  // High count (Refik Anadol Style) -- ~260,000 particles
+  let _unlimitedParticle = new UnlimitedParticle(world.value, 512);
+  particles.push( _unlimitedParticle )
+
+  let _s = 0.5;
+  _unlimitedParticle.particles.scale.set(_s,_s,_s)
 
 
 

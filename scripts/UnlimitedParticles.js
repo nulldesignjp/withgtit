@@ -105,7 +105,6 @@ void main(){
     vel = vel - tmpPos.xyz * 0.015;
     vel *= 0.98;
 
-
     gl_FragColor = vec4( vel, 1.0 );
     }`
 
@@ -267,7 +266,7 @@ uniform sampler2D textureVelocity;
         }
 
         // Geometry setup
-        var _box = new THREE.BoxGeometry(2, 8, 1);
+        var _box = new THREE.BoxGeometry(2, 8, 0.1);
         _box.rotateZ(-Math.PI * 0.5);
 
         var _geometry = new THREE.InstancedBufferGeometry();

@@ -11,4 +11,6 @@ nav.navigation
       nuxt-link(to="/260103") 20260103 
     li
       nuxt-link(to="/260109") 20260109 
+    li
+      nuxt-link(to="/260110") 20260110 
 </template>
