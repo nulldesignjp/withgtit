@@ -432,7 +432,7 @@ void main()
         var _position = new Float32Array(this.PARTICLES * _box.attributes.position.count * _box.attributes.position.itemSize);
         var _normal = new Float32Array(this.PARTICLES * _box.attributes.normal.count * _box.attributes.normal.itemSize);
         var _uvs = new Float32Array(this.PARTICLES * _box.attributes.uv.count * _box.attributes.uv.itemSize);
-        var _index = new Uint16Array(this.PARTICLES * _box.index.count * _box.index.itemSize);
+        var _index = new Uint32Array(this.PARTICLES * _box.index.count * _box.index.itemSize);
 
         var _idx = 0;
         var _idy = 0;
@@ -458,7 +458,7 @@ void main()
 
         var _idw = 0;
         for (var j = 0; j < this.WIDTH; j++) {
-            for (i = 0; i < this.WIDTH; i++) {
+            for (var i = 0; i < this.WIDTH; i++) {
                 for (var k = 0; k < _box.attributes.position.count; k++) {
                     _uvs[_idw++] = i / (this.WIDTH - 1);
                     _uvs[_idw++] = j / (this.WIDTH - 1);
