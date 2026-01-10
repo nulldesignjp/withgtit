@@ -134,7 +134,7 @@ void main(){
     vec4 tmpVel = texture2D( textureVelocity, uv );
     vec3 vel = tmpVel.xyz;
       // Use defines for random offset per instance
-    vec3 noisePos = tmpPos.xyz * 0.0025 + vec3(randomX, randomY, randomZ) * 0.1 + time * 0.1;
+    vec3 noisePos = tmpPos.xyz * 0.0025 + vec3(randomX, randomY, randomZ) * 0.5 + time * 0.1;
     vec3 cn = curlNoise( noisePos );
     
     // Retrieve per-particle speed variation from alpha channel
@@ -203,9 +203,9 @@ void main()
     vBlur = blur;
 
     // Asymmetric Size
-    // Near (Foreground): Massive Bokeh (up to 78px)
+    // Near (Foreground): Massive Bokeh (up to 72px)
     // Far (Background): Smaller Bokeh (up to 12px)
-    float bokehScale = (delta < 0.0) ? 78.0 : 12.0;
+    float bokehScale = (delta < 0.0) ? 72.0 : 12.0;
 
     gl_PointSize = 1.8 + blur * bokehScale;
     }`
@@ -296,7 +296,7 @@ uniform sampler2D textureVelocity;
     float rim = smoothstep(rimStart, 1.0, distToCenter) * (1.0 - smoothstep(0.95, 1.0, distToCenter));
     
     // Composite
-    float standardBokeh = fill * 0.85 + rim * rimPower;
+    float standardBokeh = fill * 0. + rim * rimPower * 0.5;
 
     // (Gaussian Blur removed COMPLETELY to serve SOLID center)
     // No "softness" mixing. Pure Tamaboke.
@@ -361,7 +361,7 @@ uniform sampler2D textureVelocity;
     float flashOffset = pSeed * 53.0;
     
     // Sharp sine wave for glittering
-    float twinkle = sin(time * flashSpeed + flashOffset);
+    float twinkle = sin(time * flashSpeed * 3.0 + flashOffset);
     twinkle = smoothstep(-1.0, 1.0, twinkle); // 0.0 to 1.0
     
     // Modulate alpha: 
