@@ -62,6 +62,10 @@ onMounted( async () => {
   world.value.renderer.setClearColor( 0x000000, 1 );
   // world.value.renderer.setClearAlpha( 0 );
 
+  // Tone Mapping for Saturation Control
+  world.value.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  world.value.renderer.toneMappingExposure = 1.00; // Adjust as needed (0.8 - 1.2 usually good)
+
   world.value.scene.fog = new THREE.Fog(0x000000, 100, 1000);
 
 
@@ -93,8 +97,7 @@ onMounted( async () => {
   let _unlimitedParticle = new UnlimitedParticle(world.value, 512);
   particles.push( _unlimitedParticle )
 
-  let _s = 0.5;
-  _unlimitedParticle.particles.scale.set(_s,_s,_s)
+
 
 
 
