@@ -69,7 +69,7 @@ onMounted( async () => {
   world.value.camera.far = 3000;
   world.value.camera.updateProjectionMatrix();
 
-  const ambientLight = new THREE.AmbientLight( 0x404040, 1.0 );
+  const ambientLight = new THREE.AmbientLight( 0x666666, 1.0 );
   world.value.add( ambientLight );
   
   const dir = new THREE.DirectionalLight( 0xffffff, 1.0 );
@@ -84,6 +84,90 @@ onMounted( async () => {
     let _unlimitedParticles = new UnlimitedParticles(world.value, 64);
     particles.push( _unlimitedParticles )
   }
+  // let _unlimitedParticles = new UnlimitedParticles(world.value, 256);
+  // particles.push( _unlimitedParticles )
+
+
+
+
+
+
+  //  frame
+  let _frameObject = new THREE.Object3D()
+  world.value.add( _frameObject );
+  {
+    const _padding = 16;
+
+    const _w = window.innerWidth;
+    const _h = window.innerHeight;
+
+    const _header = document.querySelector('header');
+    const _footer = document.querySelector('footer');
+
+    const _r0 = _header.getBoundingClientRect();
+    const _r1 = _footer.getBoundingClientRect();
+
+    const _headBottom = _h/2 - _r0.bottom-1;
+    const _footerTop = - ( _r1.top - _h/2 );
+
+    const _goem0 = new THREE.BufferGeometry();
+    const _positions = new Float32Array([
+      0 - _w/2, _padding - _h/2, 0,
+      _w - _w/2, _padding - _h/2, 0,
+      0 - _w/2, _h - _padding - _h/2, 0,
+      _w - _w/2, _h - _padding - _h/2, 0,
+
+      0 - _w/2, _headBottom, 0,
+      _w - _w/2, _headBottom, 0,
+      0 - _w/2, _footerTop, 0,
+      _w - _w/2, _footerTop, 0,
+
+      _padding - _w/2, 0 - _h/2, 0,
+      _padding - _w/2, _h - _h/2, 0,
+      _w - _w/2 - _padding, 0 - _h/2, 0,
+      _w - _w/2 - _padding, _h - _h/2, 0
+
+    ]);
+    _goem0.setAttribute('position', new THREE.BufferAttribute(_positions, 3));
+    const _bm0 = new THREE.LineBasicMaterial({
+      transparent: true,
+      opacity: 0.2,
+      blending: THREE.AdditiveBlending
+    });
+
+    const _line = new THREE.LineSegments( _goem0, _bm0 );
+     _line.position.z = 50;
+    _frameObject.add( _line );
+
+
+    const _goem1 = new THREE.BufferGeometry();
+    const _positions1 = new Float32Array([
+      _padding - _w/2, _padding - _h/2, 0,
+      _w - _padding - _w/2, _padding - _h/2, 0,
+      _padding - _w/2, _h - _padding - _h/2, 0,
+      _w - _padding - _w/2, _h - _padding - _h/2, 0,
+
+      _padding - _w/2, _headBottom, 0,
+      _w - _padding - _w/2, _headBottom, 0,
+      _padding - _w/2, _footerTop, 0,
+      _w - _padding - _w/2, _footerTop, 0,
+    ]);
+    _goem1.setAttribute('position', new THREE.BufferAttribute(_positions1, 3));
+    const _bm1 = new THREE.PointsMaterial({
+      transparent: true,
+      opacity: 0.8,
+      blending: THREE.AdditiveBlending
+    });
+    const _points = new THREE.Points( _goem1, _bm1 );
+    _points.position.z = 50;
+    _frameObject.add( _points );
+
+    console.log( _line, _points )
+
+  }
+
+
+
 
   _upadte()
 
@@ -109,16 +193,12 @@ header
   padding 16px 32px
 
   backdrop-filter: blur( 16px );
-  border-top 1px solid rgba(255,255,255,0.1)
-  border-bottom 1px solid rgba(255,255,255,0.1)
 
 footer
   left 0
   backdrop-filter: blur( 16px );
   padding 0 16px
   width 100%;
-  border-top 1px solid rgba(255,255,255,0.1)
-  border-bottom 1px solid rgba(255,255,255,0.1)
 
 iframe
   position fixed
