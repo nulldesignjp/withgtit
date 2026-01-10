@@ -172,6 +172,7 @@ void main(){
 
     static particleVertexShader = `#include <common>
 uniform float time;
+uniform float dofRange;
 uniform sampler2D texturePosition;
 uniform sampler2D textureVelocity;
 
@@ -198,8 +199,7 @@ void main()
     // Bokeh / Depth of Field Logic
     // Switch to Euclidean distance from camera (Spherical focus)
     float dist = length( mvPosition.xyz );
-    float focusDist = 350.0; // Fixed to Camera Z for Z=0 focus
-    float dofRange = 300.0; 
+    float focusDist = length( cameraPosition ); // Use built-in cameraPosition 
 
     // Signed distance from focus (- = Near/Foreground, + = Far/Background)
     float delta = dist - focusDist;
@@ -251,8 +251,6 @@ uniform sampler2D textureVelocity;
     if (distToCenter > 1.0) {
         discard;
     }
-
-    // --- Bokeh Shape Calculation ---
     
     // --- Bokeh Shape Calculation ---
     
@@ -322,7 +320,9 @@ uniform sampler2D textureVelocity;
     float speed = length( velTemp.xyz );
     float speedFactor = smoothstep( 0.0, 8.0, speed );
 
-    vec3 cSlow = planeColor; 
+    vec3 col = planeColor;
+    col = hueShift(col, speedFactor * 3.1416 * 2.0 * 4.0);
+    vec3 cSlow = col; 
     vec3 cFast = vec3( 1.0, 1.0, 1.0 ); 
 
     vec3 finalColor = mix( cSlow, cFast, speedFactor * 0.8 );
@@ -366,7 +366,7 @@ uniform sampler2D textureVelocity;
     float flashOffset = pSeed * 53.0;
     
     // Sharp sine wave for glittering
-    float twinkle = sin(time * flashSpeed * 3.0 + flashOffset);
+    float twinkle = sin(time * flashSpeed * 6.0 + flashOffset);
     twinkle = smoothstep(-1.0, 1.0, twinkle); // 0.0 to 1.0
     
     // Modulate alpha: 
@@ -429,15 +429,12 @@ uniform sampler2D textureVelocity;
     init() {
         this.particleUniforms = {
             time: { value: 0 },
+            dofRange: { value: 300.0 },
             texturePosition: { value: null },
             textureVelocity: { value: null },
             backbuffer: { value: null },
 
-            // 'planeColor': { type: "c", value: new THREE.Color(0.8, 0.8, 0.8) },
             'planeColor': { type: "c", value: new THREE.Color(Math.random() * 0.1 + 0.1, Math.random() * 0.3 + 0.3, Math.random() * 0.3 + 0.6) },
-            'lightPosition': { type: "v3", value: this.world.directional.position },
-            'lightColor': { type: "c", value: this.world.directional.color },
-            'ambientColor': { type: "c", value: this.world.ambient.color },
             'fogColor': { type: "c", value: this.world.scene.fog.color },
             'fogNear': { type: "f", value: this.world.scene.fog.near },
             'fogFar': { type: "f", value: this.world.scene.fog.far },

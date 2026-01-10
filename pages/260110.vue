@@ -76,16 +76,6 @@ onMounted( async () => {
   // world.value.camera.position.z = ~~world.value.pixelEqualMagnification();
   world.value.camera.updateProjectionMatrix();
 
-  const ambientLight = new THREE.AmbientLight( 0x666666, 1.0 );
-  world.value.add( ambientLight );
-  
-  const dir = new THREE.DirectionalLight( 0xffffff, 1.0 );
-  dir.position.set( 1, 1, 1 );
-  world.value.add( dir ); 
-
-  world.value.directional = dir;
-  world.value.ambient = ambientLight;
-
   // Low count (Original)
   // for( var i = 0; i < 4; i++ )
   // {
