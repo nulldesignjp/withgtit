@@ -250,27 +250,59 @@ uniform sampler2D textureVelocity;
     // 1. In-Focus Profile: Sharp, solid dot
     float inFocusShape = 1.0 - smoothstep(0.8, 1.0, distToCenter);
     
-    // 2. Out-of-Focus Profile (Bokeh): Filled circle with Rim Highlight
-    // Base Fill (Translucent body)
-    float fill = 1.0 - smoothstep(0.9, 1.0, distToCenter);
+    // [Feature] Hero Particle Differentiation (Branchless)
+    float rnd = fract(sin(dot(vReference.xy, vec2(12.9898, 78.233))) * 43758.5453);
+    float isHero = step(0.99, rnd); 
+    float isNonHero = 1.0 - isHero;
     
-    // Rim Highlight (Bright edge accumulation)
-    float rim = smoothstep(0.85, 1.0, distToCenter) * (1.0 - smoothstep(0.95, 1.0, distToCenter));
+    // Determine context (vDelta < 0.0 means isForeground = 1.0)
+    float isForeground = 1.0 - step(0.0, vDelta);
     
-    // Composite: Body + Stronger Rim for presence
-    float standardBokeh = fill * 0.4 + rim * 2.0;
+    // Active Factor: 1.0 if (Foreground AND NonHero)
+    float activeFactor = isForeground * isNonHero;
 
-    // 4. Ultra-Blur for Foreground (Soft Gaussian-like)
-    // When vBlur is high (very out of focus), the internal shape is also blurred.
-    float softBokeh = smoothstep(1.0, 0.0, distToCenter); 
-    softBokeh = pow(softBokeh, 2.0); // Bell-curveish 
-
-    // Determine mix factor: Only apply soft bokeh to foreground (delta < 0)
-    // The deeper the blur, the softer it gets.
-    float softness = (vDelta < 0.0) ? vBlur : 0.0;
+    // Parameters selection (Branchless)
     
-    // Mix shape
-    float finalShape = mix(standardBokeh, softBokeh, softness);
+    // Default (Background/Focus/Hero Background): Rim 3.0, Sharp 0.9, Alpha 1.0
+    vec3 paramsDefault = vec3(3.0, 0.9, 1.0);
+    
+    // Non-Hero Foreground: Rim 0.5, Sharp 0.5, Alpha 0.4 (Blurred, Faint)
+    vec3 paramsNonHeroFG = vec3(0.5, 0.5, 0.4);
+    
+    // Hero Foreground: Rim 0.0, Sharp 0.0, Alpha 0.2 (Very Faint Blur)
+    // User Request: "Blur whole particle", "Drop transparency further".
+    vec3 paramsHeroFG = vec3(0.0, 0.0, 0.2);
+    
+    // Logic:
+    // If Foreground:
+    //    Use mix(paramsNonHeroFG, paramsHeroFG, isHero)
+    // Else:
+    //    Use paramsDefault
+    
+    vec3 paramsFG = mix(paramsNonHeroFG, paramsHeroFG, isHero);
+    vec3 currentParams = mix(paramsDefault, paramsFG, isForeground);
+    
+    float rimPower = currentParams.x;
+    float edgeSharpness = currentParams.y;
+    float alphaAtten = currentParams.z;
+
+    // 2. Out-of-Focus Profile (Bokeh)
+    // Base Fill
+    float fill = 1.0 - smoothstep(edgeSharpness, 1.0, distToCenter);
+    
+    // Rim Highlight (Bright edge)
+    // Rim also softens if edgeSharpness is low to avoid a sharp ring on a fuzzy ball
+    float rimStart = max(0.0, edgeSharpness - 0.1); 
+    float rim = smoothstep(rimStart, 1.0, distToCenter) * (1.0 - smoothstep(0.95, 1.0, distToCenter));
+    
+    // Composite
+    float standardBokeh = fill * 0.85 + rim * rimPower;
+
+    // (Gaussian Blur removed COMPLETELY to serve SOLID center)
+    // No "softness" mixing. Pure Tamaboke.
+    
+    // Final Shape: Use Standard Bokeh directly
+    float finalShape = standardBokeh;
 
     // 3. Mix based on Blur (Sharp -> Bokeh)
     float shape = mix( inFocusShape, finalShape, vBlur );
@@ -298,6 +330,13 @@ uniform sampler2D textureVelocity;
     // Final Alpha: Shape * Base
     float finalAlpha = shape * baseAlpha;
     
+    // [Feature] Apply Non-Hero Opacity Reduction
+    finalAlpha *= alphaAtten;
+    
+    // [Feature] Hero Boost REMOVED (Handled by paramsHeroFG alpha=0.8)
+    
+    finalAlpha = min(1.0, finalAlpha); // Clamp
+    
     // Asymmetric attenuation
     if (vDelta > 0.0) {
         // BACKGROUND: Fade out strongly if blurred
@@ -312,10 +351,10 @@ uniform sampler2D textureVelocity;
     // Twinkling / Glittering Effect (Kirakira)
     float pSeed = velTemp.w * 100.0; // Recover seed stored in alpha (approx 0.8-1.2)
     
-    // Hero Particle Check (approx 0.5% chance)
-    // pSeed varies around 1.0+/-0.1. We multiply by a hash factor.
-    bool isHero = fract(pSeed * 123.45) > 0.995;
-
+    // Hero Particle Check (Unified with global isHero)
+    // We remove the separate seed check to ensure consistency.
+    // bool isHero = fract(pSeed * 123.45) > 0.995; <--- Duplicate removed
+    
     // Vary blink speed and offset based on seed
     // Increased speed and variance
     float flashSpeed = 5.0 + (pSeed * 10.0 - 10.0) * 5.0; 
@@ -335,7 +374,8 @@ uniform sampler2D textureVelocity;
 
     // [New] Hero Particle Override
     // Force high opacity for the "protagonists"
-    if (isHero) {
+    // Use global float isHero (1.0 or 0.0)
+    if (isHero > 0.5) {
         // Pulse slowly and brightly
         float heroPulse = 0.5 + 0.5 * sin(time * 3.0 + pSeed * 20.0);
         float heroAlpha = 0.9 + 0.1 * heroPulse; // Always >= 0.9
