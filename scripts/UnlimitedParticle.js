@@ -216,7 +216,7 @@ void main()
     float depthFactor = smoothstep(-100.0, 100.0, delta); // 0.0=Foreground, 1.0=Background
     float bokehScale = mix(72.0, 12.0, depthFactor);
 
-    gl_PointSize = 1.8 + blur * bokehScale;
+    gl_PointSize = 1.8 + blur * bokehScale * 2.0;
     }`
 
     static particleFragmentShader = `uniform float time;
@@ -366,7 +366,7 @@ uniform sampler2D textureVelocity;
     float flashOffset = pSeed * 53.0;
     
     // Sharp sine wave for glittering
-    float twinkle = sin(time * flashSpeed * 6.0 + flashOffset);
+    float twinkle = sin(time * flashSpeed * 8.0 + flashOffset);
     twinkle = smoothstep(-1.0, 1.0, twinkle); // 0.0 to 1.0
     
     // Modulate alpha: 
