@@ -111,18 +111,19 @@ vec3 curlNoise( vec3 p ){
   vec3 dy = vec3( 0.0 , e   , 0.0 );
   vec3 dz = vec3( 0.0 , 0.0 , e   );
 
-  vec3 p_x0 = snoiseVec3( p - dx );
+  // Optimization: Use Forward Difference instead of Central Difference
+  // Reduces snoise calls from 6 * 3 = 18 to 4 * 3 = 12
+  
+  vec3 p_0 = snoiseVec3( p );
   vec3 p_x1 = snoiseVec3( p + dx );
-  vec3 p_y0 = snoiseVec3( p - dy );
   vec3 p_y1 = snoiseVec3( p + dy );
-  vec3 p_z0 = snoiseVec3( p - dz );
   vec3 p_z1 = snoiseVec3( p + dz );
 
-  float x = p_y1.z - p_y0.z - p_z1.y + p_z0.y;
-  float y = p_z1.x - p_z0.x - p_x1.z + p_x0.z;
-  float z = p_x1.y - p_x0.y - p_y1.x + p_y0.x;
+  float x = p_y1.z - p_0.z - p_z1.y + p_0.y;
+  float y = p_z1.x - p_0.x - p_x1.z + p_0.z;
+  float z = p_x1.y - p_0.y - p_y1.x + p_0.x;
 
-  const float divisor = 1.0 / ( 2.0 * e );
+  const float divisor = 1.0 / e;
   return normalize( vec3( x , y , z ) * divisor );
 
 }
@@ -214,7 +215,9 @@ void main()
     // Far (Background): Smaller Bokeh (up to 12px)
     // Seamless transition using smoothstep
     float depthFactor = smoothstep(-100.0, 100.0, delta); // 0.0=Foreground, 1.0=Background
-    float bokehScale = mix(72.0, 12.0, depthFactor);
+    
+    // Optimization: Reduced max Size from 72.0 to 48.0 to prevent overwhelming fill-rate
+    float bokehScale = mix(48.0, 8.0, depthFactor);
 
     gl_PointSize = 1.8 + blur * bokehScale * 2.0;
     }`
@@ -541,6 +544,36 @@ uniform sampler2D textureVelocity;
             velArray[k + 2] = (Math.random() - 0.5) * 8
             // Very subtle variation range: 0.90 to 1.10 (nearly uniform)
             velArray[k + 3] = Math.random() * 0.2 + 0.90;
+        }
+    }
+
+    dispose() {
+        if (this.gpuCompute) {
+            // Dispose generated textures in variables
+            if (this.positionVariable && this.positionVariable.initialValueTexture) {
+                this.positionVariable.initialValueTexture.dispose();
+            }
+            if (this.velocityVariable && this.velocityVariable.initialValueTexture) {
+                this.velocityVariable.initialValueTexture.dispose();
+            }
+
+            // Dispose render targets (if accessible via internal variables or loop)
+            // GPUComputationRenderer usually exposes getCurrentRenderTarget for the variables
+            const posRT = this.gpuCompute.getCurrentRenderTarget(this.positionVariable);
+            if (posRT) posRT.dispose();
+            const velRT = this.gpuCompute.getCurrentRenderTarget(this.velocityVariable);
+            if (velRT) velRT.dispose();
+
+            // If there's an internal dispose, call it (some versions don't have it, but we cleaned RTs)
+            if (this.gpuCompute.dispose) this.gpuCompute.dispose();
+            this.gpuCompute = null;
+        }
+
+        if (this.particles) {
+            this.world.remove(this.particles);
+            if (this.particles.geometry) this.particles.geometry.dispose();
+            if (this.particles.material) this.particles.material.dispose();
+            this.particles = null;
         }
     }
 }
