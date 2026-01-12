@@ -82,7 +82,7 @@ onMounted( async () => {
 
   setTimeout(()=>{
     webglview.value.classList.add('active')
-  },1000);
+  },100);
 
 
 
@@ -137,7 +137,7 @@ iframe
 .webglview
   opacity 0
 
-  transition opacity 2.0s ease-in-out
+  transition opacity 0.5s ease-in-out
 
   &.active
     opacity 1
