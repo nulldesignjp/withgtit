@@ -210,11 +210,6 @@ onUnmounted(() => {
 
 <style lang="stylus" scoped>
 
-header,
-footer
-
-  display none
-
 header
 
   margin 16px 0
