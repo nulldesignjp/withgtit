@@ -25,6 +25,7 @@
 import * as THREE from 'three';
 import StarPlatinum from '~/scripts/StarPlatinum';
 import UnlimitedParticle from '~/scripts/UnlimitedParticle';
+import CaptureStream from '~/scripts/CaptureStream';
 
 const world = ref(null)
 const webglview = ref(null)
@@ -86,6 +87,26 @@ onMounted( async () => {
   // High count (Refik Anadol Style) -- ~260,000 particles
   let _unlimitedParticle = new UnlimitedParticle(world.value, 512);
   particles.push( _unlimitedParticle )
+
+
+
+  let _cs = new CaptureStream( webglview.value, 60 )
+
+  let _flag = false;
+
+  window.addEventListener('keydown', ()=>{
+    _flag = !_flag;
+
+    if( _flag )
+      {
+      _cs.rec()
+    }
+    else
+    {
+      _cs.stop()
+    }
+  })
+  
 
 
   setTimeout(()=>{
@@ -182,11 +203,17 @@ onUnmounted(() => {
   particles.forEach( (particle) => {
     particle.dispose();
   } )
+
 });
 
 </script>
 
 <style lang="stylus" scoped>
+
+header,
+footer
+
+  display none
 
 header
 
