@@ -50,6 +50,84 @@ let _upadte = ()=>{
   } ) 
 }
 
+
+//  dom frames
+let _frameList = []
+let _frameObject = {}
+let _resize = ()=>
+{
+  const _padding = 16;
+  const _w = window.innerWidth;
+  const _h = window.innerHeight;
+  const _header = document.querySelector('header');
+  const _footer = document.querySelector('footer');
+  const _r0 = _header.getBoundingClientRect();
+  const _r1 = _footer.getBoundingClientRect();
+  const _headBottom = _r0.bottom;
+  const _footerTop = _r1.top;
+  _frameObject['frameLeft'].style.left = _padding + 'px';
+  _frameObject['frameRight'].style.left = _w - _padding + 'px';
+
+  _frameObject['headTop'].style.left = '0px';
+  _frameObject['headTop'].style.top = _padding + 'px';
+
+  _frameObject['headBottom'].style.left = '0px';
+  _frameObject['headBottom'].style.top = _headBottom + 'px';
+
+  _frameObject['footerTop'].style.left = '0px';
+  _frameObject['footerTop'].style.top = _footerTop + 'px';
+
+  _frameObject['footerBottom'].style.left = '0px';
+  _frameObject['footerBottom'].style.top = _h - _padding + 'px';
+
+
+  particles.forEach( (particle) => {
+    particle.resize();
+  } )
+}
+
+
+let _duration = 10000;
+let _mouseKey;
+let _activeCheck = ()=>
+{
+  const _header = document.querySelector('header')
+  const _footer = document.querySelector('footer')
+  const _lineWrapper = document.querySelector('.lineWrapper')
+  _header.classList.remove('hide');
+  _footer.classList.remove('hide');
+  _lineWrapper.classList.remove('hide');
+
+  clearTimeout( _mouseKey );
+  _mouseKey = setTimeout(()=>{
+    _header.classList.add('hide');
+    _footer.classList.add('hide');
+    _lineWrapper.classList.add('hide');
+  }, _duration)
+}
+
+
+let _param = {
+  timeScale: 1.0,
+  flg: true
+}
+let _toggle = ()=>{
+  _param.flg = !_param.flg;
+  const _targetScale = _param.flg?1.0:0.0;
+
+  gsap.to( _param, { 
+    timeScale: _targetScale, 
+    duration: 3.0,
+    onUpdate: ()=>{
+      timeScale = _param.timeScale;
+      //  _unlimitedParticle.velocityVariable.material.uniforms.timeScale.value = _param.timeScale;
+      particles.forEach( (particle) => {
+        particle.velocityVariable.material.uniforms.timeScale.value = _param.timeScale;
+      } )
+    }
+  } )
+}
+
 useHead(() => ({
   title: 'untitled',
   bodyAttrs: {
@@ -87,8 +165,14 @@ onMounted( async () => {
     world.value.camera.updateProjectionMatrix();
     
     // High count (Refik Anadol Style) -- ~260,000 particles
-    let _unlimitedParticle = new UnlimitedParticle(world.value, 512);
-    particles.push( _unlimitedParticle )
+    // let _unlimitedParticle = new UnlimitedParticle(world.value, 512);
+    // particles.push( _unlimitedParticle )
+
+    for( var i = 0; i < 4; i++ )
+    {
+      let _particle = new UnlimitedParticle(world.value, 512);
+      particles.push( _particle )
+    }
 
 
     if( false )
@@ -114,36 +198,17 @@ onMounted( async () => {
 
 
     setTimeout(()=>{
-      webglview.value.classList.add('active')
+      webglview.value?.classList.add('active')
     },1000);
     _upadte()
 
+    window.addEventListener('click', _toggle )
+    window.addEventListener('touchstart', _toggle )
 
-    let _param = {
-      timeScale: 1.0,
-      flg: true
-    }
-    window.addEventListener('click', ()=>{
-      _param.flg = !_param.flg;
-      const _targetScale = _param.flg?1.0:0.0;
-
-      gsap.to( _param, { 
-        timeScale: _targetScale, 
-        duration: 3.0,
-        onUpdate: ()=>{
-          timeScale = _param.timeScale;
-          _unlimitedParticle.velocityVariable.material.uniforms.timeScale.value = _param.timeScale;
-        }
-      } )
-
-    })
   }
 
 
 
-    //  dom frames
-    let _frameList = []
-    let _frameObject = {}
     if( true )
     {
 
@@ -238,57 +303,12 @@ onMounted( async () => {
     }
 
 
-    window.addEventListener('resize', () => {
-      const _padding = 16;
-      const _w = window.innerWidth;
-      const _h = window.innerHeight;
-      const _header = document.querySelector('header');
-      const _footer = document.querySelector('footer');
-      const _r0 = _header.getBoundingClientRect();
-      const _r1 = _footer.getBoundingClientRect();
-      const _headBottom = _r0.bottom;
-      const _footerTop = _r1.top;
-      _frameObject['frameLeft'].style.left = _padding + 'px';
-      _frameObject['frameRight'].style.left = _w - _padding + 'px';
-
-      _frameObject['headTop'].style.left = '0px';
-      _frameObject['headTop'].style.top = _padding + 'px';
-
-      _frameObject['headBottom'].style.left = '0px';
-      _frameObject['headBottom'].style.top = _headBottom + 'px';
-
-      _frameObject['footerTop'].style.left = '0px';
-      _frameObject['footerTop'].style.top = _footerTop + 'px';
-
-      _frameObject['footerBottom'].style.left = '0px';
-      _frameObject['footerBottom'].style.top = _h - _padding + 'px';
-
-    })
 
 
-
-    let _duration = 10000;
-    let _mouseKey;
-    let _activeCheck = ()=>
-    {
-      const _header = document.querySelector('header')
-      const _footer = document.querySelector('footer')
-      const _lineWrapper = document.querySelector('.lineWrapper')
-      _header.classList.remove('hide');
-       _footer.classList.remove('hide');
-      _lineWrapper.classList.remove('hide');
-
-      clearTimeout( _mouseKey );
-      _mouseKey = setTimeout(()=>{
-        _header.classList.add('hide');
-         _footer.classList.add('hide');
-        _lineWrapper.classList.add('hide');
-      }, _duration)
-    }
     _activeCheck();
-    window.addEventListener('mousemove',()=>{
-      _activeCheck()
-    });
+    window.addEventListener('mousemove',_activeCheck );
+    window.addEventListener('touchmove',_activeCheck );
+    window.addEventListener('resize', _resize )
 
 
 
@@ -302,6 +322,22 @@ onUnmounted(() => {
   particles.forEach( (particle) => {
     particle.dispose();
   } )
+
+  clearTimeout( _mouseKey );
+  window.removeEventListener('resize', _activeCheck); 
+  window.removeEventListener('mousemove', _activeCheck);
+  window.removeEventListener('touchmove', _activeCheck);
+  window.removeEventListener('resize', _resize)
+  window.removeEventListener('click', _toggle)
+  window.removeEventListener('touchstart', _toggle)
+
+  _frameList.forEach( (frame) => {
+    frame.remove();
+  } )
+  _frameList = [];
+  _frameObject = {};
+
+
 
 });
 

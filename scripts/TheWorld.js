@@ -192,7 +192,12 @@ export default class TheWorld {
      * @param {*} _object3d 
      */
     remove(_object3d) {
-        _object3d.parent().remove(_object3d);
+        if (_object3d.parent) {
+            _object3d.parent.remove(_object3d);
+        } else {
+            this.scene.remove(_object3d);
+        }
+
     }
 
     /**

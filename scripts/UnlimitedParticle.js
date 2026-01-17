@@ -525,6 +525,10 @@ uniform sampler2D textureVelocity;
         this.particles.material.uniforms.textureVelocity.value = this.gpuCompute.getCurrentRenderTarget(this.velocityVariable).texture;
     }
 
+    resize() {
+        this.particleUniforms.baseSize.value = window.innerHeight / 1080;
+    }
+
     initDataField(texturePosition, textureVelocity) {
         //	データを一度取り出す
         var posArray = texturePosition.image.data;
