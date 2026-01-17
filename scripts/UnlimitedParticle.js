@@ -20,6 +20,7 @@ void main(){
 #include <common>
 
 uniform float time;
+uniform float timeScale;
 
 // Simplex 3D Noise 
 // by Ian McEwan, Ashima Arts
@@ -148,7 +149,7 @@ void main(){
     
     // Apply force with very subtle variation (0.90x to 1.10x)
     float forceMultiplier = 0.90 + pSeed * 0.2;
-    vel += cn * 5.0 * forceMultiplier;
+    vel += cn * 5.0 * forceMultiplier * timeScale;
 
     //  Damping
     vel *= 0.96;
@@ -165,7 +166,7 @@ void main(){
     }
     
     //  grav center
-    vel -= normalize( tmpPos.xyz ) * 2.0;
+    vel -= normalize( tmpPos.xyz ) * 2.0 * timeScale;
 
 
     gl_FragColor = vec4( vel, pSeed );
@@ -176,6 +177,7 @@ uniform float time;
 uniform float dofRange;
 uniform sampler2D texturePosition;
 uniform sampler2D textureVelocity;
+uniform float baseSize;
 
 attribute vec2 reference;
 
@@ -219,7 +221,7 @@ void main()
     // Optimization: Reduced max Size from 72.0 to 48.0 to prevent overwhelming fill-rate
     float bokehScale = mix(48.0, 8.0, depthFactor);
 
-    gl_PointSize = 1.8 + blur * bokehScale * 2.0;
+    gl_PointSize = 1.8 + blur * bokehScale * 2.0 * baseSize;
     }`
 
     static particleFragmentShader = `uniform float time;
@@ -436,6 +438,7 @@ uniform sampler2D textureVelocity;
             texturePosition: { value: null },
             textureVelocity: { value: null },
             backbuffer: { value: null },
+            baseSize: { value: window.innerHeight / 1080 },
 
             'planeColor': { type: "c", value: new THREE.Color(Math.random() * 0.1 + 0.1, Math.random() * 0.3 + 0.3, Math.random() * 0.3 + 0.6) },
             'fogColor': { type: "c", value: this.world.scene.fog.color },
@@ -492,6 +495,7 @@ uniform sampler2D textureVelocity;
         this.gpuCompute.setVariableDependencies(this.velocityVariable, [this.positionVariable, this.velocityVariable]);
         this.gpuCompute.setVariableDependencies(this.positionVariable, [this.positionVariable, this.velocityVariable]);
 
+        // Uniformsの設定
         this.positionUniforms = this.positionVariable.material.uniforms;
         this.velocityUniforms = this.velocityVariable.material.uniforms;
 
@@ -502,6 +506,9 @@ uniform sampler2D textureVelocity;
         this.velocityVariable.material.defines.randomY = Math.random() * 100.0;
         this.velocityVariable.material.defines.randomZ = Math.random() * 100.0;
 
+        this.positionVariable.material.uniforms.timeScale = { value: 1.0 };
+        this.velocityVariable.material.uniforms.timeScale = { value: 1.0 };
+
         var error = this.gpuCompute.init();
         if (error !== null) {
             console.error(error);
@@ -509,6 +516,7 @@ uniform sampler2D textureVelocity;
     }
 
     update(_stepTime = 0.016) {
+
         this.gpuCompute.compute();
         this.timer += _stepTime;
         this.velocityUniforms.time.value = this.timer;

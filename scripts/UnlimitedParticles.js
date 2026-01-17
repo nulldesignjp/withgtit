@@ -253,7 +253,7 @@ uniform sampler2D textureVelocity;
             time: { value: 0 },
             texturePosition: { value: null },
             textureVelocity: { value: null },
-            backbuffer: { value: null },
+            backbuffer: { value: null }
 
             // 'planeColor': { type: "c", value: new THREE.Color(0.8, 0.8, 0.8) },
             'planeColor': { type: "c", value: new THREE.Color(Math.random() * 0.1 + 0.1, Math.random() * 0.3 + 0.3, Math.random() * 0.3 + 0.6) },
