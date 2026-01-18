@@ -94,15 +94,15 @@ let _activeCheck = ()=>
   const _header = document.querySelector('header')
   const _footer = document.querySelector('footer')
   const _lineWrapper = document.querySelector('.lineWrapper')
-  _header.classList.remove('hide');
-  _footer.classList.remove('hide');
-  _lineWrapper.classList.remove('hide');
+  _header?.classList.remove('hide');
+  _footer?.classList.remove('hide');
+  _lineWrapper?.classList.remove('hide');
 
   clearTimeout( _mouseKey );
   _mouseKey = setTimeout(()=>{
-    _header.classList.add('hide');
-    _footer.classList.add('hide');
-    _lineWrapper.classList.add('hide');
+    _header?.classList.add('hide');
+    _footer?.classList.add('hide');
+    _lineWrapper?.classList.add('hide');
   }, _duration)
 }
 
@@ -140,7 +140,6 @@ onMounted( async () => {
   //  imprettion
   if( true )
   {
-    
 
     world.value = new StarPlatinum({
       canvas: webglview.value,
@@ -168,13 +167,14 @@ onMounted( async () => {
     // let _unlimitedParticle = new UnlimitedParticle(world.value, 512);
     // particles.push( _unlimitedParticle )
 
-    for( var i = 0; i < 4; i++ )
+    for( var i = 0; i < 2; i++ )
     {
       let _particle = new UnlimitedParticle(world.value, 512);
       particles.push( _particle )
     }
 
 
+    //  capture stream
     if( false )
     {
       let _cs = new CaptureStream( webglview.value, 60 )
