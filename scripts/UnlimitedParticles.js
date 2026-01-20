@@ -377,4 +377,13 @@ uniform sampler2D textureVelocity;
             velArray[k + 3] = 0;
         }
     }
+    dispose() {
+        if (this.geometry) this.geometry.dispose();
+        if (this.material) this.material.dispose();
+        if (this.particles) {
+            this.world.remove(this.particles);
+        }
+        // Dispose of GPUComputationRenderer resources if possible, 
+        // though it mainly just creates textures which we should dispose.
+    }
 }

@@ -1,12 +1,12 @@
 <template lang="pug">
 .page
-  header
+  header(ref="headerRef")
     h1 nulldesign.jp.
     p Learning Records and Prototype Archives
 
     navigation
 
-  footer
+  footer(ref="footerRef")
     p.copyright © 2025 nulldesign.
     p.sns
       a(href="https://twitter.com/intent/tweet?url=https%3A%2F%2Fhrsk.dev%2F&text=portfolip%20and%20archives.%0D%0A" target="_blank")
@@ -28,6 +28,8 @@ import UnlimitedParticles from '~/scripts/UnlimitedParticles';
 
 const world = ref(null)
 const webglview = ref(null)
+const headerRef = ref(null)
+const footerRef = ref(null)
 
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
@@ -35,8 +37,8 @@ const particles = []
 
 let _intervalKey = null;
 
-let _upadte = ()=>{
-  _intervalKey = requestAnimationFrame( _upadte );
+let _update = ()=>{
+  _intervalKey = requestAnimationFrame( _update );
   particles.forEach( (particle) => {
     particle.particles.rotation.x -= 0.0001
     particle.particles.rotation.y -= 0.0001
@@ -98,14 +100,23 @@ onMounted( async () => {
   //  frame
   let _frameObject = new THREE.Object3D()
   world.value.add( _frameObject );
-  {
-    const _padding = 16;
+  const _updateFrame = () => {
+    // Clean up old children
+    while(_frameObject.children.length > 0){ 
+      const child = _frameObject.children[0];
+      _frameObject.remove(child);
+      if(child.geometry) child.geometry.dispose();
+      if(child.material) child.material.dispose();
+    }
 
+    const _padding = 16;
     const _w = window.innerWidth;
     const _h = window.innerHeight;
 
-    const _header = document.querySelector('header');
-    const _footer = document.querySelector('footer');
+    const _header = headerRef.value;
+    const _footer = footerRef.value;
+
+    if(!_header || !_footer) return;
 
     const _r0 = _header.getBoundingClientRect();
     const _r1 = _footer.getBoundingClientRect();
@@ -162,20 +173,30 @@ onMounted( async () => {
     });
     const _points = new THREE.Points( _goem1, _bm1 );
     _frameObject.add( _points );
+  }
 
+  _updateFrame();
+  window.addEventListener('resize', _updateFrame);
 
+  // Expose for cleanup
+  world.value._cleanupFrame = () => {
+    window.removeEventListener('resize', _updateFrame);
   }
 
 
 
 
-  _upadte()
+  _update()
 
 });
 
 onUnmounted(() => {
 
   cancelAnimationFrame( _intervalKey );
+
+  if (world.value && world.value._cleanupFrame) {
+    world.value._cleanupFrame();
+  }
 
   world.value.dispose();
   particles.forEach( (particle) => {
