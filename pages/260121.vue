@@ -6,9 +6,10 @@
 
     navigation
 
+  h2 archives
   .contents(ref="contents")
-    h2 archives
-      
+    .cell(v-for="n in 12" :key="n")
+      p archive {{ n }}    
 
   footer
     p.copyright © 2025 nulldesign.
@@ -135,35 +136,6 @@ onMounted( async () => {
     world.value.camera.updateProjectionMatrix();
     
 
-    let _size = 180
-    let _margin = 30
-    for( var i = 0; i < 3; i++ )
-    {
-      for( var j = 0; j < 5; j++ )
-      {
-        let _geometry = new THREE.PlaneGeometry( _size, _size )
-        let _material = new THREE.MeshBasicMaterial({
-          color: 0xFF0000,
-          side: THREE.DoubleSide,
-        })
-        let _mesh = new THREE.Mesh( _geometry, _material )
-        _mesh.position.set( ( i - 1 ) * ( _size + _margin ), - ( j - 0 ) * ( _size + _margin ), 0 )
-        world.value.scene.add( _mesh )
-
-
-        let _dom = document.createElement('div')
-        _dom.classList.add('cell')
-
-        let _p = document.createElement('p')
-        _p.textContent = `POST - ${i} ${j}`
-        _dom.appendChild( _p )
-
-        contents.value.appendChild( _dom )
-
-
-
-      }
-    }
 
 
 
@@ -387,10 +359,10 @@ footer
 
 .contents
   display grid
-  grid-template-columns repeat( 3, 200px )
+  grid-template-columns repeat( 12, 1fr )
   gap 10px
   margin 0
-  padding 0 32px
+  padding 0 80px
   width 100%
   color #080808
   place-content: center;
@@ -401,10 +373,8 @@ footer
     line-height 1
 
   .cell
-    padding 180px 10px 20px
-    width 200px
-    height 240px
-    border 1px solid rgba(0,0,0,0.4)
+    background rgba( 255, 0, 0, 0.1 )
+    width 100%
 
     p
       margin-bottom 0
